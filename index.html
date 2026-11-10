@@ -382,12 +382,14 @@
                 // 等待字体和布局稳定，避免截图到滚动中的页面位置。
                 if (document.fonts && document.fonts.ready) await document.fonts.ready;
                 await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-                const width = area.scrollWidth;
-                const height = area.scrollHeight;
+                // 用适合公示长图的固定画布宽度；手机页面本身较窄，直接截 viewport
+                // 会把表格挤压或裁掉。克隆 DOM 后再解除横向滚动容器的裁切。
+                const width = 1000;
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
                     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
                 const maxPixels = isIOS ? 12000000 : 24000000;
-                const scale = Math.min(isIOS ? 1.5 : 2, Math.sqrt(maxPixels / (width * height)));
+                const height = area.scrollHeight;
+                const scale = Math.min(isIOS ? 1.25 : 2, Math.sqrt(maxPixels / (width * height)));
                 const canvas = await html2canvas(area, {
                     scale: Math.max(0.5, scale),
                     useCORS: true,
@@ -395,10 +397,25 @@
                     logging: false,
                     width,
                     height,
-                    windowWidth: Math.max(document.documentElement.clientWidth, width),
-                    windowHeight: Math.max(document.documentElement.clientHeight, height),
+                    windowWidth: width,
+                    windowHeight: height,
                     scrollX: 0,
-                    scrollY: 0
+                    scrollY: 0,
+                    onclone: clonedDoc => {
+                        const clonedArea = clonedDoc.getElementById('publicityArea');
+                        clonedArea.style.width = width + 'px';
+                        clonedArea.style.maxWidth = 'none';
+                        clonedArea.style.margin = '0';
+                        clonedArea.style.overflow = 'visible';
+                        clonedArea.querySelectorAll('.overflow-x-auto').forEach(el => {
+                            el.style.overflow = 'visible';
+                            el.style.width = '100%';
+                        });
+                        clonedArea.querySelectorAll('table').forEach(el => {
+                            el.style.width = '100%';
+                            el.style.minWidth = '0';
+                        });
+                    }
                 });
                 const imgData = canvas.toDataURL('image/jpeg', 0.9);
                 if (!imgData || imgData === 'data:,') throw new Error('图片尺寸超出浏览器限制');
