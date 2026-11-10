@@ -349,84 +349,55 @@
             document.getElementById('footerDate').textContent = dateStr;
         }
 
-        // iOS微信兼容版导出高清图片
-        function exportImage() {
-            showToast('正在生成公示图片，请稍候3-5秒...');
+        // 微信 iOS 中不触发文件下载，生成图片后在预览框长按保存。
+        async function exportImage() {
             const area = document.getElementById('publicityArea');
-            
-            // 1. 先滚动到公示区域顶部，避免微信中滚动偏移导致截图错位
-            area.scrollIntoView({behavior: 'instant', block: 'start'});
-            
-            // 2. 隐藏删除按钮
             const deleteBtns = document.querySelectorAll('.print\\:hidden');
-            deleteBtns.forEach(el => el.style.display = 'none');
-
-            // 3. 判断是否为iOS设备（包括微信、Safari）
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            const isMobile = window.innerWidth < 768;
-            
-            // 4. iOS设备降低缩放比例，控制canvas总像素不超过苹果系统限制（4096*4096），避免内存崩溃
-            let scale = 2;
-            if(isIOS) {
-                scale = 1; // iOS微信下用1倍缩放，保证能成功生成
-            } else if(isMobile) {
-                scale = 1.2;
+            if (typeof window.html2canvas !== 'function') {
+                showToast('图片组件加载失败，请刷新页面后重试');
+                return;
             }
-
-            // 5. 延迟500ms等待页面稳定，滚动和隐藏效果完成
-            setTimeout(() => {
-                html2canvas(area, {
-                    scale: scale,
+            showToast('正在生成公示图片，请稍候…');
+            deleteBtns.forEach(el => el.style.display = 'none');
+            try {
+                // 等待字体和布局稳定，避免截图到滚动中的页面位置。
+                if (document.fonts && document.fonts.ready) await document.fonts.ready;
+                await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+                const width = area.scrollWidth;
+                const height = area.scrollHeight;
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                const maxPixels = isIOS ? 12000000 : 24000000;
+                const scale = Math.min(isIOS ? 1.5 : 2, Math.sqrt(maxPixels / (width * height)));
+                const canvas = await html2canvas(area, {
+                    scale: Math.max(0.5, scale),
                     useCORS: true,
                     backgroundColor: '#fdf8f0',
                     logging: false,
-                    allowTaint: false, // 关闭allowTaint避免跨域污染导致toDataURL失败
-                    removeContainer: true,
-                    // iOS微信关键配置：强制使用页面尺寸，不要用window尺寸避免异常
-                    width: area.offsetWidth,
-                    height: area.offsetHeight,
-                    windowWidth: area.offsetWidth,
-                    windowHeight: area.offsetHeight,
+                    width,
+                    height,
+                    windowWidth: Math.max(document.documentElement.clientWidth, width),
+                    windowHeight: Math.max(document.documentElement.clientHeight, height),
                     scrollX: 0,
-                    scrollY: -window.scrollY
-                }).then(canvas => {
-                    // 恢复删除按钮
-                    deleteBtns.forEach(el => el.style.display = '');
-
-                    // 6. iOS微信优先用jpeg格式，比png内存小很多，避免转码失败
-                    let imgData;
-                    let fileName;
-                    try {
-                        // 先尝试jpeg，质量0.92，体积小清晰度足够
-                        imgData = canvas.toDataURL('image/jpeg', 0.92);
-                        fileName = `大梨树沟道路捐资投工公示榜_${new Date().toLocaleDateString('zh-CN').replace(/\//g,'-')}.jpg`;
-                    } catch(e) {
-                        // jpeg失败退回到png
-                        imgData = canvas.toDataURL('image/png');
-                        fileName = `大梨树沟道路捐资投工公示榜_${new Date().toLocaleDateString('zh-CN').replace(/\//g,'-')}.png`;
-                    }
-                    
-                    // 7. 填充预览弹窗
-                    const previewImg = document.getElementById('previewImage');
-                    const downloadBtn = document.getElementById('downloadBtn');
-                    previewImg.src = imgData;
-                    downloadBtn.href = imgData;
-                    downloadBtn.download = fileName;
-                    
-                    // 8. 显示预览弹窗
-                    const modal = document.getElementById('imagePreviewModal');
-                    modal.classList.remove('hidden');
-                    modal.classList.add('flex');
-                    modal.scrollTop = 0;
-                    
-                    showToast('图片生成成功！请长按图片选择"保存到相册"');
-                }).catch(err => {
-                    // 恢复删除按钮
-                    deleteBtns.forEach(el => el.style.display = '');
-                    console.error('导出失败详情：', err);
-                    showToast('图片生成失败，请点击右上角「...」选择「在浏览器打开」后重试，或直接使用打印功能');
+                    scrollY: 0
                 });
-            }, 500);
+                const imgData = canvas.toDataURL('image/jpeg', 0.9);
+                if (!imgData || imgData === 'data:,') throw new Error('图片尺寸超出浏览器限制');
+                document.getElementById('previewImage').src = imgData;
+                const downloadBtn = document.getElementById('downloadBtn');
+                downloadBtn.href = imgData;
+                downloadBtn.download = `道路捐资投工公示榜_${new Date().toISOString().slice(0, 10)}.jpg`;
+                const modal = document.getElementById('imagePreviewModal');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                modal.scrollTop = 0;
+                showToast('图片已生成，请长按图片保存到相册');
+            } catch (err) {
+                console.error('导出图片失败：', err);
+                showToast('生成失败，请刷新页面重试；也可使用打印功能');
+            } finally {
+                deleteBtns.forEach(el => el.style.display = '');
+            }
         }
 
         // 关闭图片预览
