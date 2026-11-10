@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>周湾组到大梨组道路加宽硬化捐资投工公示台账</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#c82525',
+                        secondary: '#d4a017',
+                        accent: '#2e7d32',
+                        paper: '#fdf8f0',
+                        ink: '#2c1810'
+                    },
+                    fontFamily: {
+                        song: ['Songti SC', 'STSong', 'SimSun', 'serif'],
+                        sans: ['PingFang SC', 'Microsoft YaHei', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .paper-texture {
+                background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+                background-color: theme('colors.paper');
+            }
+            .seal {
+                border: 3px solid theme('colors.primary');
+                color: theme('colors.primary');
+                transform: rotate(-8deg);
+            }
+            .table-border th, .table-border td {
+                border: 1px solid #8b4513;
+            }
+        }
+    </style>
+</head>
+<body class="font-sans text-ink bg-gray-100 min-h-screen py-4 md:py-8 px-2 md:px-4">
+    <!-- Toast提示 -->
+    <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100] opacity-0 transition-opacity duration-300 pointer-events-none">
+        <i class="fa fa-check-circle mr-2"></i><span id="toastText">操作成功</span>
+    </div>
+
+    <!-- 操作工具栏 -->
+    <div class="max-w-5xl mx-auto mb-4 bg-white rounded-lg shadow-md p-3 flex flex-wrap gap-2 items-center justify-between">
+        <h2 class="font-bold text-lg text-primary flex items-center gap-2">
+            <i class="fa fa-cog"></i> 台账管理
+        </h2>
+        <div class="flex flex-wrap gap-2">
+            <button onclick="toggleForm()" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition flex items-center gap-1 text-sm">
+                <i class="fa fa-plus"></i> 添加记录
+            </button>
+            <button onclick="exportImage()" class="px-4 py-2 bg-accent text-white rounded-md hover:bg-accent/90 transition flex items-center gap-1 text-sm">
+                <i class="fa fa-file-image-o"></i> 导出公示图片
+            </button>
+            <button onclick="printPage()" class="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 transition flex items-center gap-1 text-sm">
+                <i class="fa fa-print"></i> 打印
+            </button>
+            <button onclick="clearAll()" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-400 transition flex items-center gap-1 text-sm">
+                <i class="fa fa-trash"></i> 清空数据
+            </button>
+        </div>
+    </div>
+
+    <!-- 添加记录表单弹窗 -->
+    <div id="addForm" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold text-primary mb-4 flex items-center gap-2">
+                <i class="fa fa-pencil-square-o"></i> 添加捐资投工记录
+            </h3>
+            <form id="recordForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">姓名/单位</label>
+                    <input type="text" id="name" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" placeholder="如：张三 / 某建材公司">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">类型</label>
+                        <select id="type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none">
+                            <option value="捐资">捐资</option>
+                            <option value="投工">投工</option>
+                            <option value="捐物">捐物</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">金额/数量</label>
+                        <input type="number" id="amount" step="0.01" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" placeholder="元/工日">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">备注（选填）</label>
+                    <input type="text" id="note" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" placeholder="如：捐赠水泥5吨">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">日期</label>
+                    <input type="date" id="date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none">
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="toggleForm()" class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition">取消</button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition">保存记录</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 公示区域（导出图片区域） -->
+    <div id="publicityArea" class="max-w-5xl mx-auto paper-texture shadow-xl rounded-lg overflow-hidden border-8 border-double border-primary/80">
+        <!-- 公示头部 -->
+        <div class="text-center py-8 px-4 md:px-8 relative">
+            <div class="absolute top-4 left-4 md:top-6 md:left-6 w-16 h-16 md:w-20 md:h-20 seal rounded-full flex items-center justify-center text-xs md:text-sm font-bold opacity-80">
+                公益<br>事业
+            </div>
+            <div class="absolute top-4 right-4 md:top-6 md:right-6 w-16 h-16 md:w-20 md:h-20 seal rounded-full flex items-center justify-center text-xs md:text-sm font-bold opacity-80">
+                功德<br>无量
+            </div>
+            
+            <h1 class="font-song text-2xl md:text-4xl font-black text-primary mb-2 tracking-wider">周湾组大梨树沟道路加宽硬化</h1>
+            <h2 class="font-song text-xl md:text-3xl font-bold text-ink mb-4">捐资投工功德公示榜</h2>
+            <p class="text-base md:text-lg text-ink/80 max-w-3xl mx-auto leading-relaxed">
+                道通则人兴，路通则财旺。衷心感谢各位乡亲、乡贤及社会各界友人的鼎力支持，共筑乡村振兴致富路，芳名永载，功德长存！
+            </p>
+            <p class="text-sm text-ink/60 mt-2" id="updateDate">统计截止日期：2026年11月10日</p>
+        </div>
+
+        <!-- 统计数据卡片 -->
+        <div class="px-4 md:px-8 mb-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                <div class="bg-white/80 rounded-lg p-3 md:p-4 border border-secondary/30 text-center shadow-sm">
+                    <div class="text-xs md:text-sm text-ink/60 mb-1">累计捐资</div>
+                    <div class="text-xl md:text-3xl font-bold text-primary" id="totalMoney">0.00</div>
+                    <div class="text-xs text-ink/60">元</div>
+                </div>
+                <div class="bg-white/80 rounded-lg p-3 md:p-4 border border-accent/30 text-center shadow-sm">
+                    <div class="text-xs md:text-sm text-ink/60 mb-1">累计投工</div>
+                    <div class="text-xl md:text-3xl font-bold text-accent" id="totalWork">0</div>
+                    <div class="text-xs text-ink/60">工日</div>
+                </div>
+                <div class="bg-white/80 rounded-lg p-3 md:p-4 border border-secondary/30 text-center shadow-sm">
+                    <div class="text-xs md:text-sm text-ink/60 mb-1">捐物折款</div>
+                    <div class="text-xl md:text-3xl font-bold text-secondary" id="totalGoods">0.00</div>
+                    <div class="text-xs text-ink/60">元</div>
+                </div>
+                <div class="bg-white/80 rounded-lg p-3 md:p-4 border border-primary/30 text-center shadow-sm">
+                    <div class="text-xs md:text-sm text-ink/60 mb-1">参与人次</div>
+                    <div class="text-xl md:text-3xl font-bold text-ink" id="totalCount">0</div>
+                    <div class="text-xs text-ink/60">人/单位</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 公示表格 -->
+        <div class="px-4 md:px-8 pb-8">
+            <div class="overflow-x-auto">
+                <table class="w-full table-border border-collapse font-song text-sm md:text-base">
+                    <thead>
+                        <tr class="bg-primary/10">
+                            <th class="py-2 md:py-3 px-2 md:px-4 text-center w-12 md:w-16">序号</th>
+                            <th class="py-2 md:py-3 px-2 md:px-4 text-center">姓名/单位</th>
+                            <th class="py-2 md:py-3 px-2 md:px-4 text-center w-20 md:w-28">类型</th>
+                            <th class="py-2 md:py-3 px-2 md:px-4 text-center w-24 md:w-32">捐资/数量</th>
+                            <th class="py-2 md:py-3 px-2 md:px-4 text-center">备注</th>
+                            <th class="py-2 md:py-3 px-2 md:px-4 text-center w-24 md:w-32">日期</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordTable">
+                        <tr>
+                            <td colspan="6" class="py-8 text-center text-ink/50">暂无记录，点击"添加记录"开始录入</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 底部说明 -->
+            <div class="mt-6 md:mt-8 text-sm md:text-base text-ink/80 space-y-2">
+                <p><strong>说明：</strong></p>
+                <p>1. 本台账所有捐资投工均为自愿参与，善款专款专用，全程公开透明，接受全体村民监督；</p>
+                <p>2. 捐资300元及以上者将统一刻碑铭记，芳名永存，功德千秋；</p>
+                <p>3. 数据实时更新，如有遗漏或错误，请及时与周湾组村民理事会联系更正。</p>
+            </div>
+
+            <!-- 落款 -->
+            <div class="mt-8 text-right pr-4 md:pr-8">
+                <p class="font-song text-lg md:text-xl font-bold">周湾组村民理事会</p>
+                <p class="text-sm md:text-base mt-1" id="footerDate">2026年11月10日</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-5xl mx-auto mt-4 text-center text-sm text-gray-500">
+        <p>提示：数据自动保存在本地浏览器中，导出的公示图片可直接打印张贴或发村群公示<br>部署到GitHub Pages后，村民可直接在线查看公示榜</p>
+    </div>
+
+    <script>
+        let records = JSON.parse(localStorage.getItem('roadDonationRecords') || '[]');
+        const form = document.getElementById('recordForm');
+        const addFormModal = document.getElementById('addForm');
+        const recordTable = document.getElementById('recordTable');
+        const toast = document.getElementById('toast');
+        const toastText = document.getElementById('toastText');
+        
+        // 显示提示
+        function showToast(msg) {
+            toastText.textContent = msg;
+            toast.classList.remove('opacity-0');
+            setTimeout(() => toast.classList.add('opacity-0'), 2000);
+        }
+
+        // 初始化日期为今天
+        document.getElementById('date').valueAsDate = new Date();
+
+        // 切换表单显示
+        function toggleForm() {
+            addFormModal.classList.toggle('hidden');
+            addFormModal.classList.toggle('flex');
+            form.reset();
+            document.getElementById('date').valueAsDate = new Date();
+        }
+
+        // 打印页面
+        function printPage() {
+            showToast('正在唤起打印窗口，请稍候...');
+            // 隐藏管理操作按钮
+            document.querySelector('.max-w-5xl.mx-auto.mb-4').classList.add('print:hidden');
+            window.print();
+        }
+
+        // 提交表单
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const record = {
+                id: Date.now(),
+                name: document.getElementById('name').value.trim(),
+                type: document.getElementById('type').value,
+                amount: parseFloat(document.getElementById('amount').value),
+                note: document.getElementById('note').value.trim(),
+                date: document.getElementById('date').value
+            };
+            records.push(record);
+            saveAndRender();
+            toggleForm();
+            showToast('记录添加成功！');
+        });
+
+        // 删除记录
+        function deleteRecord(id) {
+            if(confirm('确定要删除这条记录吗？')) {
+                records = records.filter(r => r.id !== id);
+                saveAndRender();
+                showToast('记录已删除');
+            }
+        }
+
+        // 保存并渲染
+        function saveAndRender() {
+            localStorage.setItem('roadDonationRecords', JSON.stringify(records));
+            renderTable();
+            updateStats();
+        }
+
+        // 渲染表格
+        function renderTable() {
+            if(records.length === 0) {
+                recordTable.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-ink/50">暂无记录，点击"添加记录"开始录入</td></tr>';
+                return;
+            }
+            // 按日期倒序
+            records.sort((a,b) => new Date(b.date) - new Date(a.date));
+            let html = '';
+            records.forEach((r, index) => {
+                let amountText = '';
+                let typeClass = '';
+                if(r.type === '捐资') {
+                    amountText = r.amount.toFixed(2) + ' 元';
+                    typeClass = 'text-primary font-medium';
+                } else if(r.type === '投工') {
+                    amountText = r.amount + ' 工日';
+                    typeClass = 'text-accent font-medium';
+                } else {
+                    amountText = r.amount.toFixed(2) + ' 元';
+                    typeClass = 'text-secondary font-medium';
+                }
+                const dateText = r.date ? new Date(r.date).toLocaleDateString('zh-CN') : '';
+                html += `
+                <tr class="hover:bg-primary/5">
+                    <td class="py-2 md:py-3 px-2 md:px-4 text-center">${index + 1}</td>
+                    <td class="py-2 md:py-3 px-2 md:px-4">${r.name}</td>
+                    <td class="py-2 md:py-3 px-2 md:px-4 text-center ${typeClass}">${r.type}</td>
+                    <td class="py-2 md:py-3 px-2 md:px-4 text-right">${amountText}</td>
+                    <td class="py-2 md:py-3 px-2 md:px-4">${r.note || '-'}</td>
+                    <td class="py-2 md:py-3 px-2 md:px-4 text-center">${dateText}<button onclick="deleteRecord(${r.id})" class="ml-2 text-gray-400 hover:text-red-500 print:hidden" title="删除"><i class="fa fa-times-circle"></i></button></td>
+                </tr>
+                `;
+            });
+            recordTable.innerHTML = html;
+        }
+
+        // 更新统计数据
+        function updateStats() {
+            let totalMoney = 0, totalWork = 0, totalGoods = 0;
+            records.forEach(r => {
+                if(r.type === '捐资') totalMoney += r.amount;
+                else if(r.type === '投工') totalWork += r.amount;
+                else if(r.type === '捐物') totalGoods += r.amount;
+            });
+            document.getElementById('totalMoney').textContent = totalMoney.toFixed(2);
+            document.getElementById('totalWork').textContent = totalWork;
+            document.getElementById('totalGoods').textContent = totalGoods.toFixed(2);
+            document.getElementById('totalCount').textContent = records.length;
+            
+            // 更新日期
+            const today = new Date();
+            const dateStr = `${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日`;
+            document.getElementById('updateDate').textContent = `统计截止日期：${dateStr}`;
+            document.getElementById('footerDate').textContent = dateStr;
+        }
+
+        // 导出高清图片
+        function exportImage() {
+            showToast('正在生成高清公示图片，请稍候...');
+            const area = document.getElementById('publicityArea');
+            // 先隐藏删除按钮
+            document.querySelectorAll('.print\\:hidden').forEach(el => el.style.display = 'none');
+            
+            html2canvas(area, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#fdf8f0',
+                logging: false
+            }).then(canvas => {
+                // 恢复删除按钮
+                document.querySelectorAll('.print\\:hidden').forEach(el => el.style.display = '');
+                
+                const link = document.createElement('a');
+                link.download = `大梨树沟道路捐资投工公示榜_${new Date().toLocaleDateString('zh-CN').replace(/\//g,'-')}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                showToast('公示图片导出成功！');
+            });
+        }
+
+        // 清空所有数据
+        function clearAll() {
+            if(confirm('确定要清空所有记录吗？此操作不可恢复！')) {
+                records = [];
+                saveAndRender();
+                showToast('所有数据已清空');
+            }
+        }
+
+        // 初始化渲染
+        saveAndRender();
+    </script>
+</body>
+</html>
