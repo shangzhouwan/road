@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>周湾到大栗道路道路捐资投工公示榜</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        paper: '#f8f1e3',
+                        ink: '#2b2b2b',
+                        zhuhong: '#c23a2b',
+                        gold: '#b8860b',
+                    },
+                    fontFamily: {
+                        song: ['"Noto Serif SC"', '"SimSun"', '"STSong"', 'serif'],
+                        hei: ['"Noto Sans SC"', '"PingFang SC"', '"Microsoft YaHei"', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .paper-texture {
+                background-color: #f8f1e3;
+                background-image: radial-gradient(#e6d9c3 0.6px, transparent 0.6px);
+                background-size: 12px 12px;
+            }
+            .seal {
+                border: 3px solid #c23a2b;
+                color: #c23a2b;
+                border-radius: 4px;
+                transform: rotate(-8deg);
+            }
+            .table-border {
+                border-top: 1px solid #8b7355;
+                border-left: 1px solid #8b7355;
+            }
+            .table-border th, .table-border td {
+                border-bottom: 1px solid #8b7355;
+                border-right: 1px solid #8b7355;
+            }
+            .btn-clickable {
+                cursor: pointer;
+                -webkit-tap-highlight-color: transparent;
+                touch-action: manipulation;
+                user-select: none;
+            }
+        }
+    </style>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
+        body {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: none;
+        }
+        .modal-backdrop {
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-hei min-h-screen pb-20">
+    <!-- 顶部操作栏 -->
+    <div class="sticky top-0 z-40 bg-white shadow-md px-4 py-3 flex flex-wrap gap-2 justify-between items-center">
+        <h1 class="text-lg font-bold text-ink">周湾组捐资投工台账管理</h1>
+        <div class="flex flex-wrap gap-2">
+            <button id="addBtn" class="btn-clickable bg-zhuhong text-white px-4 py-2 rounded-lg text-sm flex items-center gap-1">
+                <i class="fa fa-plus-circle"></i> 添加记录
+            </button>
+            <button id="exportImgBtn" class="btn-clickable bg-gold text-white px-4 py-2 rounded-lg text-sm flex items-center gap-1">
+                <i class="fa fa-file-image-o"></i> 导出公示图片
+            </button>
+            <button id="printBtn" class="btn-clickable bg-green-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-1">
+                <i class="fa fa-print"></i> 打印公示
+            </button>
+        </div>
+    </div>
+
+    <!-- 公示主区域（导出范围） -->
+    <div id="publicNotice" class="paper-texture max-w-4xl mx-auto mt-6 p-6 md:p-10 shadow-lg">
+        <!-- 标题 -->
+        <div class="text-center mb-8">
+            <div class="inline-block border-t-2 border-b-2 border-ink py-2 px-6">
+                <h2 class="text-2xl md:text-4xl font-song font-bold text-ink tracking-widest">周湾到大栗道路道路加宽硬化</h2>
+                <h3 class="text-xl md:text-3xl font-song font-bold text-zhuhong tracking-widest mt-2">捐资投工功德公示榜</h3>
+            </div>
+            <p class="text-sm text-gray-600 mt-3">公示日期：<span id="noticeDate"></span></p>
+        </div>
+
+        <!-- 统计汇总 -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white/60 p-4 rounded-lg border border-amber-200 text-center">
+                <p class="text-sm text-gray-600">累计捐资总额</p>
+                <p class="text-2xl font-bold text-zhuhong mt-1">¥<span id="totalMoney">0</span></p>
+            </div>
+            <div class="bg-white/60 p-4 rounded-lg border border-amber-200 text-center">
+                <p class="text-sm text-gray-600">累计投工</p>
+                <p class="text-2xl font-bold text-green-700 mt-1"><span id="totalWork">0</span> 工日</p>
+            </div>
+            <div class="bg-white/60 p-4 rounded-lg border border-amber-200 text-center">
+                <p class="text-sm text-gray-600">捐物折款</p>
+                <p class="text-2xl font-bold text-gold mt-1">¥<span id="totalGoods">0</span></p>
+            </div>
+            <div class="bg-white/60 p-4 rounded-lg border border-amber-200 text-center">
+                <p class="text-sm text-gray-600">参与人次</p>
+                <p class="text-2xl font-bold text-blue-800 mt-1"><span id="totalPeople">0</span> 人</p>
+            </div>
+        </div>
+
+        <!-- 说明文字 -->
+        <div class="mb-6 font-song text-ink leading-relaxed indent-8">
+            道通则人兴，路通则财旺。大梨树沟道路加宽硬化项目是我组重点民生工程，承蒙各位乡贤、乡亲鼎力支持，慷慨捐资投工，共筑致富大道。现将所有捐资投工明细公示如下，接受全体村民监督，所有善款专款专用，功德昭昭，永载村史。
+        </div>
+
+        <!-- 公示表格 -->
+        <div class="overflow-x-auto">
+            <table class="w-full table-border font-song text-ink">
+                <thead>
+                    <tr class="bg-amber-100/70">
+                        <th class="py-3 px-2 text-center font-bold">序号</th>
+                        <th class="py-3 px-2 text-left font-bold">姓名</th>
+                        <th class="py-3 px-2 text-center font-bold">捐资(元)</th>
+                        <th class="py-3 px-2 text-center font-bold">投工(日)</th>
+                        <th class="py-3 px-2 text-left font-bold">捐物/备注</th>
+                        <th class="py-3 px-2 text-center font-bold">日期</th>
+                    </tr>
+                </thead>
+                <tbody id="recordTable">
+                    <!-- 记录由JS动态生成 -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 底部落款 -->
+        <div class="mt-10 flex flex-col md:flex-row justify-between items-end">
+            <div class="font-song text-ink">
+                <p>监督说明：所有收支明细全程公示，专款专用</p>
+                <p>查询联系人：周湾组村民理事会</p>
+                <p>技术支持：史雪鹏</p>
+            </div>
+            <div class="seal px-4 py-2 text-xl font-bold mt-4 md:mt-0">
+                周湾组<br>村民理事会
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加记录弹窗 -->
+    <div id="addModal" class="fixed inset-0 z-50 bg-black/50 modal-backdrop hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl w-full max-w-md p-6 shadow-2xl">
+            <h3 class="text-lg font-bold mb-4">添加捐资投工记录</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">姓名 <span class="text-red-500">*</span></label>
+                    <input type="text" id="inputName" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-zhuhong" placeholder="请输入姓名">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">捐资金额(元)</label>
+                        <input type="number" id="inputMoney" min="0" step="1" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-zhuhong" placeholder="0" value="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">投工(日)</label>
+                        <input type="number" id="inputWork" min="0" step="0.5" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-zhuhong" placeholder="0" value="0">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">捐物/备注</label>
+                    <input type="text" id="inputRemark" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-zhuhong" placeholder="如：水泥10袋、砂石2方等，无则留空">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">日期</label>
+                    <input type="date" id="inputDate" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-zhuhong">
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button id="cancelAddBtn" class="btn-clickable flex-1 py-2 border border-gray-300 rounded-lg text-gray-700">取消</button>
+                <button id="confirmAddBtn" class="btn-clickable flex-1 py-2 bg-zhuhong text-white rounded-lg">确认添加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图片预览弹窗 -->
+    <div id="imgPreviewModal" class="fixed inset-0 z-50 bg-black/80 modal-backdrop hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-auto">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="font-bold">公示图片预览</h3>
+                <button id="closePreviewBtn" class="btn-clickable text-gray-500 text-xl"><i class="fa fa-times"></i></button>
+            </div>
+            <div class="p-4 text-center">
+                <p class="text-sm text-gray-600 mb-3">手机用户请长按图片→选择"保存到相册"即可保存张贴</p>
+                <img id="previewImg" class="max-w-full mx-auto border border-gray-200 rounded">
+                <div class="mt-4 flex gap-3 justify-center">
+                    <a id="downloadImgBtn" class="btn-clickable bg-zhuhong text-white px-4 py-2 rounded-lg text-sm flex items-center gap-1" download="捐资投工公示榜.png">
+                        <i class="fa fa-download"></i> 下载图片
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading提示 -->
+    <div id="loadingToast" class="fixed inset-0 z-[60] bg-black/30 hidden flex items-center justify-center">
+        <div class="bg-white rounded-lg px-6 py-4 flex items-center gap-3 shadow-xl">
+            <i class="fa fa-spinner fa-spin text-zhuhong text-xl"></i>
+            <span id="loadingText">正在生成图片，请稍候...</span>
+        </div>
+    </div>
+
+    <!-- 提示Toast -->
+    <div id="toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-[70] bg-black/80 text-white px-4 py-2 rounded-lg text-sm hidden"></div>
+
+    <script>
+        // 全局工具函数
+        function showToast(msg, duration=2000) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), duration);
+        }
+        function showLoading(text='加载中...') {
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loadingToast').classList.remove('hidden');
+        }
+        function hideLoading() {
+            document.getElementById('loadingToast').classList.add('hidden');
+        }
+
+        // 初始化数据
+        let records = JSON.parse(localStorage.getItem('donationRecords') || '[]');
+        if(records.length === 0) {
+            // 默认示例数据
+            records = [
+               
+            ];
+            saveRecords();
+        }
+
+        function saveRecords() {
+            localStorage.setItem('donationRecords', JSON.stringify(records));
+            renderTable();
+            updateStats();
+        }
+
+        // 渲染表格
+        function renderTable() {
+            const tbody = document.getElementById('recordTable');
+            tbody.innerHTML = '';
+            records.forEach((item, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = idx % 2 === 0 ? 'bg-white/40' : 'bg-transparent';
+                tr.innerHTML = `
+                    <td class="py-2 px-2 text-center">${idx+1}</td>
+                    <td class="py-2 px-2">${item.name}</td>
+                    <td class="py-2 px-2 text-center">${item.money > 0 ? item.money : '-'}</td>
+                    <td class="py-2 px-2 text-center">${item.work > 0 ? item.work : '-'}</td>
+                    <td class="py-2 px-2">${item.remark || '-'}</td>
+                    <td class="py-2 px-2 text-center">${item.date}</td>
+                `;
+                // 管理模式下显示删除按钮（导出时会隐藏）
+                const delTd = document.createElement('td');
+                delTd.className = 'py-2 px-2 text-center action-col';
+                delTd.innerHTML = `<button class="btn-clickable del-btn text-red-500 text-sm" data-id="${item.id}"><i class="fa fa-trash"></i></button>`;
+                tr.appendChild(delTd);
+                tbody.appendChild(tr);
+            });
+            // 绑定删除事件
+            document.querySelectorAll('.del-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(e.currentTarget.dataset.id);
+                    if(confirm('确定删除这条记录吗？')) {
+                        records = records.filter(r => r.id !== id);
+                        saveRecords();
+                        showToast('删除成功');
+                    }
+                });
+            });
+        }
+
+        // 更新统计
+        function updateStats() {
+            let totalMoney = 0, totalWork = 0, totalPeople = new Set();
+            records.forEach(item => {
+                totalMoney += Number(item.money) || 0;
+                totalWork += Number(item.work) || 0;
+                if(item.remark.includes('折款')) {
+                    const match = item.remark.match(/折款(\d+)/);
+                    if(match) totalMoney += Number(match[1]);
+                }
+                totalPeople.add(item.name);
+            });
+            document.getElementById('totalMoney').textContent = totalMoney.toLocaleString();
+            document.getElementById('totalWork').textContent = totalWork;
+            document.getElementById('totalPeople').textContent = totalPeople.size;
+            document.getElementById('totalGoods').textContent = '0';
+            document.getElementById('noticeDate').textContent = new Date().toLocaleDateString('zh-CN');
+        }
+
+        // 添加记录功能
+        document.getElementById('addBtn').addEventListener('click', () => {
+            document.getElementById('inputDate').valueAsDate = new Date();
+            document.getElementById('addModal').classList.remove('hidden');
+        });
+        document.getElementById('cancelAddBtn').addEventListener('click', () => {
+            document.getElementById('addModal').classList.add('hidden');
+            document.getElementById('inputName').value = '';
+            document.getElementById('inputMoney').value = 0;
+            document.getElementById('inputWork').value = 0;
+            document.getElementById('inputRemark').value = '';
+        });
+        document.getElementById('confirmAddBtn').addEventListener('click', () => {
+            const name = document.getElementById('inputName').value.trim();
+            const money = Number(document.getElementById('inputMoney').value) || 0;
+            const work = Number(document.getElementById('inputWork').value) || 0;
+            const remark = document.getElementById('inputRemark').value.trim();
+            const date = document.getElementById('inputDate').value;
+            if(!name) {
+                showToast('请填写姓名');
+                return;
+            }
+            if(money === 0 && work === 0 && !remark) {
+                showToast('请至少填写捐资、投工或捐物一项');
+                return;
+            }
+            records.push({
+                id: Date.now(),
+                name, money, work, remark, date
+            });
+            saveRecords();
+            document.getElementById('cancelAddBtn').click();
+            showToast('添加成功');
+        });
+
+        // 打印功能
+        document.getElementById('printBtn').addEventListener('click', () => {
+            const actionCols = document.querySelectorAll('.action-col');
+            actionCols.forEach(el => el.style.display = 'none');
+            document.querySelector('.sticky.top-0').style.display = 'none';
+            window.print();
+            setTimeout(() => {
+                actionCols.forEach(el => el.style.display = '');
+                document.querySelector('.sticky.top-0').style.display = '';
+            }, 500);
+        });
+
+        // 修复苹果微信：动态加载html2canvas，多CDN fallback
+        function loadHtml2canvas() {
+            return new Promise((resolve, reject) => {
+                if(window.html2canvas) {
+                    resolve(window.html2canvas);
+                    return;
+                }
+                // 多CDN源，逐个尝试
+                const cdnList = [
+                    'https://cdn.jsdelivr.net/npm/html2canvas@1.4.8/dist/html2canvas.min.js',
+                    'https://unpkg.com/html2canvas@1.4.8/dist/html2canvas.min.js',
+                    'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.8/html2canvas.min.js'
+                ];
+                function tryLoad(idx) {
+                    if(idx >= cdnList.length) {
+                        reject(new Error('图片导出组件加载失败，请检查网络后重试'));
+                        return;
+                    }
+                    const script = document.createElement('script');
+                    script.src = cdnList[idx];
+                    script.onload = () => resolve(window.html2canvas);
+                    script.onerror = () => tryLoad(idx + 1);
+                    document.body.appendChild(script);
+                }
+                tryLoad(0);
+            });
+        }
+
+        // 导出图片功能（针对苹果微信全量修复）
+        document.getElementById('exportImgBtn').addEventListener('click', async () => {
+            try {
+                showLoading('正在加载导出组件...');
+                const html2canvas = await loadHtml2canvas();
+                showLoading('正在生成公示图片，请稍候...');
+
+                // 准备导出节点：不修改原DOM，克隆后离屏渲染（避免页面闪动，避免微信DOM更新冲突）
+                const sourceEl = document.getElementById('publicNotice');
+                const cloneEl = sourceEl.cloneNode(true);
+                // 移除克隆节点里的操作列
+                cloneEl.querySelectorAll('.action-col').forEach(el => el.remove());
+                // 设置离屏样式，不影响用户看到的原页面
+                cloneEl.style.position = 'fixed';
+                cloneEl.style.left = '-9999px';
+                cloneEl.style.top = '0';
+                cloneEl.style.width = sourceEl.offsetWidth + 'px';
+                cloneEl.style.background = '#f8f1e3';
+                document.body.appendChild(cloneEl);
+
+                // 等待DOM渲染完成
+                await new Promise(resolve => setTimeout(resolve, 300));
+
+                // 判断是否iOS设备，适配像素限制（iOS最大4096像素）
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                const isWeixin = /MicroMessenger/i.test(navigator.userAgent);
+                const scale = (isIOS && isWeixin) ? 1 : 2; // 苹果微信用1倍，避免内存超限
+
+                const canvas = await html2canvas(cloneEl, {
+                    useCORS: true,
+                    scale: scale,
+                    backgroundColor: '#f8f1e3',
+                    logging: false,
+                    allowTaint: true,
+                    x: 0,
+                    y: 0,
+                    scrollX: 0,
+                    scrollY: 0,
+                    windowWidth: cloneEl.scrollWidth,
+                    windowHeight: cloneEl.scrollHeight
+                });
+
+                // 移除离屏克隆节点
+                document.body.removeChild(cloneEl);
+
+                // 生成图片：苹果微信优先用JPEG，减少内存占用
+                const imgType = isIOS && isWeixin ? 'image/jpeg' : 'image/png';
+                const imgQuality = isIOS && isWeixin ? 0.92 : 1.0;
+                const imgUrl = canvas.toDataURL(imgType, imgQuality);
+
+                // 显示预览弹窗
+                document.getElementById('previewImg').src = imgUrl;
+                document.getElementById('downloadImgBtn').href = imgUrl;
+                document.getElementById('imgPreviewModal').classList.remove('hidden');
+                hideLoading();
+            } catch (err) {
+                hideLoading();
+                console.error('导出失败:', err);
+                showToast('图片生成失败，请点右上角选择「在浏览器打开」后重试，或直接使用打印功能');
+            }
+        });
+
+        // 关闭预览弹窗
+        document.getElementById('closePreviewBtn').addEventListener('click', () => {
+            document.getElementById('imgPreviewModal').classList.add('hidden');
+        });
+        document.getElementById('imgPreviewModal').addEventListener('click', (e) => {
+            if(e.target === document.getElementById('imgPreviewModal')) {
+                document.getElementById('imgPreviewModal').classList.add('hidden');
+            }
+        });
+
+        // 初始化
+        renderTable();
+        updateStats();
+
+        // 打印样式适配
+        const printStyle = document.createElement('style');
+        printStyle.textContent = `
+            @media print {
+                .sticky.top-0, .action-col { display: none !important; }
+                body { background: white !important; padding: 0 !important; }
+                #publicNotice { box-shadow: none !important; margin: 0 !important; padding: 20px !important; max-width: 100% !important; }
+            }
+        `;
+        document.head.appendChild(printStyle);
+    </script>
+</body>
+</html>
