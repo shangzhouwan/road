@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>周湾到大栗道路加宽硬化捐资投工公示台账</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <!-- 使用html2canvas 1.4.8，对iOS微信WKWebView兼容性更好 -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.8/dist/html2canvas.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script>
         tailwind.config = {
@@ -29,13 +30,13 @@
     <style type="text/tailwindcss">
         @layer utilities {
             .paper-texture {
-                background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+                /* iOS微信下移除复杂svg噪音滤镜，改用纯色背景避免渲染崩溃 */
                 background-color: theme('colors.paper');
             }
             .seal {
                 border: 3px solid theme('colors.primary');
                 color: theme('colors.primary');
-                transform: rotate(-8deg);
+                /* 移除transform旋转，iOS微信下transform会导致html2canvas渲染错位失败 */
             }
             .table-border th, .table-border td {
                 border: 1px solid #8b4513;
@@ -126,7 +127,7 @@
                 <img id="previewImage" class="w-full h-auto rounded" alt="公示图片">
             </div>
             <div class="text-center space-y-2">
-                <p class="text-sm text-gray-600"><i class="fa fa-info-circle mr-1"></i> 手机用户请<strong>长按图片</strong>→选择"保存图片"即可保存到相册；电脑用户可点击下方按钮下载</p>
+                <p class="text-sm text-gray-600"><i class="fa fa-info-circle mr-1"></i> 苹果/安卓手机请<strong>长按图片</strong>→选择"保存到相册"即可保存；电脑用户可点击下方按钮下载</p>
                 <div class="flex flex-wrap gap-2 justify-center">
                     <a id="downloadBtn" class="px-4 py-2 bg-accent text-white rounded-md hover:bg-accent/90 transition flex items-center gap-1 text-sm" download>
                         <i class="fa fa-download"></i> 下载图片
@@ -238,7 +239,7 @@
         function showToast(msg) {
             toastText.textContent = msg;
             toast.classList.remove('opacity-0');
-            setTimeout(() => toast.classList.add('opacity-0'), 2000);
+            setTimeout(() => toast.classList.add('opacity-0'), 3000);
         }
 
         // 初始化日期为今天
@@ -255,8 +256,6 @@
         // 打印页面
         function printPage() {
             showToast('正在唤起打印窗口，请稍候...');
-            // 隐藏管理操作按钮
-            document.querySelector('.max-w-5xl.mx-auto.mb-4').classList.add('print:hidden');
             window.print();
         }
 
@@ -350,54 +349,84 @@
             document.getElementById('footerDate').textContent = dateStr;
         }
 
-        // 导出高清图片
+        // iOS微信兼容版导出高清图片
         function exportImage() {
-            showToast('正在生成高清公示图片，请稍候...');
+            showToast('正在生成公示图片，请稍候3-5秒...');
             const area = document.getElementById('publicityArea');
-            // 先隐藏删除按钮
-            document.querySelectorAll('.print\\:hidden').forEach(el => el.style.visibility = 'hidden');
             
-            // 手机端延迟一小段时间确保隐藏完成
+            // 1. 先滚动到公示区域顶部，避免微信中滚动偏移导致截图错位
+            area.scrollIntoView({behavior: 'instant', block: 'start'});
+            
+            // 2. 隐藏删除按钮
+            const deleteBtns = document.querySelectorAll('.print\\:hidden');
+            deleteBtns.forEach(el => el.style.display = 'none');
+
+            // 3. 判断是否为iOS设备（包括微信、Safari）
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isMobile = window.innerWidth < 768;
+            
+            // 4. iOS设备降低缩放比例，控制canvas总像素不超过苹果系统限制（4096*4096），避免内存崩溃
+            let scale = 2;
+            if(isIOS) {
+                scale = 1; // iOS微信下用1倍缩放，保证能成功生成
+            } else if(isMobile) {
+                scale = 1.2;
+            }
+
+            // 5. 延迟500ms等待页面稳定，滚动和隐藏效果完成
             setTimeout(() => {
                 html2canvas(area, {
-                    scale: window.innerWidth < 768 ? 1.5 : 2,
+                    scale: scale,
                     useCORS: true,
                     backgroundColor: '#fdf8f0',
                     logging: false,
-                    allowTaint: true,
-                    scrollY: -window.scrollY,
-                    windowWidth: document.documentElement.offsetWidth,
-                    windowHeight: document.documentElement.offsetHeight
+                    allowTaint: false, // 关闭allowTaint避免跨域污染导致toDataURL失败
+                    removeContainer: true,
+                    // iOS微信关键配置：强制使用页面尺寸，不要用window尺寸避免异常
+                    width: area.offsetWidth,
+                    height: area.offsetHeight,
+                    windowWidth: area.offsetWidth,
+                    windowHeight: area.offsetHeight,
+                    scrollX: 0,
+                    scrollY: -window.scrollY
                 }).then(canvas => {
                     // 恢复删除按钮
-                    document.querySelectorAll('.print\\:hidden').forEach(el => el.style.visibility = '');
+                    deleteBtns.forEach(el => el.style.display = '');
+
+                    // 6. iOS微信优先用jpeg格式，比png内存小很多，避免转码失败
+                    let imgData;
+                    let fileName;
+                    try {
+                        // 先尝试jpeg，质量0.92，体积小清晰度足够
+                        imgData = canvas.toDataURL('image/jpeg', 0.92);
+                        fileName = `大梨树沟道路捐资投工公示榜_${new Date().toLocaleDateString('zh-CN').replace(/\//g,'-')}.jpg`;
+                    } catch(e) {
+                        // jpeg失败退回到png
+                        imgData = canvas.toDataURL('image/png');
+                        fileName = `大梨树沟道路捐资投工公示榜_${new Date().toLocaleDateString('zh-CN').replace(/\//g,'-')}.png`;
+                    }
                     
-                    // 获取图片数据
-                    const imgData = canvas.toDataURL('image/png');
-                    const fileName = `大梨树沟道路捐资投工公示榜_${new Date().toLocaleDateString('zh-CN').replace(/\//g,'-')}.png`;
-                    
-                    // 填充预览弹窗
+                    // 7. 填充预览弹窗
                     const previewImg = document.getElementById('previewImage');
                     const downloadBtn = document.getElementById('downloadBtn');
                     previewImg.src = imgData;
                     downloadBtn.href = imgData;
                     downloadBtn.download = fileName;
                     
-                    // 显示预览弹窗
+                    // 8. 显示预览弹窗
                     const modal = document.getElementById('imagePreviewModal');
                     modal.classList.remove('hidden');
                     modal.classList.add('flex');
-                    
-                    // 滚动到顶部
                     modal.scrollTop = 0;
-                    showToast('图片生成成功！手机长按图片即可保存');
+                    
+                    showToast('图片生成成功！请长按图片选择"保存到相册"');
                 }).catch(err => {
                     // 恢复删除按钮
-                    document.querySelectorAll('.print\\:hidden').forEach(el => el.style.visibility = '');
-                    showToast('图片生成失败，请重试');
-                    console.error(err);
+                    deleteBtns.forEach(el => el.style.display = '');
+                    console.error('导出失败详情：', err);
+                    showToast('图片生成失败，请点击右上角「...」选择「在浏览器打开」后重试，或直接使用打印功能');
                 });
-            }, 100);
+            }, 500);
         }
 
         // 关闭图片预览
