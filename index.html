@@ -350,16 +350,35 @@
         }
 
         // 微信 iOS 中不触发文件下载，生成图片后在预览框长按保存。
+        function ensureHtml2Canvas() {
+            if (typeof window.html2canvas === 'function') return Promise.resolve();
+            const sources = [
+                'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+                'https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js',
+                'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js'
+            ];
+            return new Promise((resolve, reject) => {
+                let index = 0;
+                const tryNext = () => {
+                    if (typeof window.html2canvas === 'function') return resolve();
+                    if (index >= sources.length) return reject(new Error('截图组件无法从 CDN 加载'));
+                    const script = document.createElement('script');
+                    script.src = sources[index++];
+                    script.onload = () => typeof window.html2canvas === 'function' ? resolve() : tryNext();
+                    script.onerror = tryNext;
+                    document.head.appendChild(script);
+                };
+                tryNext();
+            });
+        }
+
         async function exportImage() {
             const area = document.getElementById('publicityArea');
             const deleteBtns = document.querySelectorAll('.print\\:hidden');
-            if (typeof window.html2canvas !== 'function') {
-                showToast('图片组件加载失败，请刷新页面后重试');
-                return;
-            }
             showToast('正在生成公示图片，请稍候…');
             deleteBtns.forEach(el => el.style.display = 'none');
             try {
+                await ensureHtml2Canvas();
                 // 等待字体和布局稳定，避免截图到滚动中的页面位置。
                 if (document.fonts && document.fonts.ready) await document.fonts.ready;
                 await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -394,7 +413,8 @@
                 showToast('图片已生成，请长按图片保存到相册');
             } catch (err) {
                 console.error('导出图片失败：', err);
-                showToast('生成失败，请刷新页面重试；也可使用打印功能');
+                const reason = err && err.message ? err.message : '未知错误';
+                showToast(reason.includes('CDN') ? '截图组件加载失败，请检查网络或换浏览器打开' : `生成失败：${reason}`);
             } finally {
                 deleteBtns.forEach(el => el.style.display = '');
             }
