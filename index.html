@@ -376,7 +376,7 @@
                     <td class="py-2 md:py-3 px-2 md:px-4 text-center ${typeClass}">${r.type}</td>
                     <td class="py-2 md:py-3 px-2 md:px-4 text-right">${amountText}</td>
                     <td class="py-2 md:py-3 px-2 md:px-4">${r.note || '-'}</td>
-                    <td class="py-2 md:py-3 px-2 md:px-4 text-center">${dateText}<button onclick="deleteRecord(${r.id})" class="ml-2 text-gray-400 hover:text-red-500 print:hidden" title="删除"><i class="fa fa-times-circle"></i></button></td>
+                    <td class="py-2 md:py-3 px-2 md:px-4 text-center"><button onclick="deleteRecord(${r.id})" class="ml-2 text-gray-400 hover:text-red-500 print:hidden" title="删除"><i class="fa fa-times-circle"></i></button></td>
                 </tr>
                 `;
             });
