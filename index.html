@@ -208,7 +208,7 @@
                     </thead>
                     <tbody id="recordTable">
                         <tr>
-                            <td colspan="6" class="py-8 text-center text-ink/50">暂无记录，点击"添加记录"开始录入</td>
+                            <td colspan="6" class="py-8 text-center text-ink/50"></td>
                         </tr>
                     </tbody>
                 </table>
@@ -346,7 +346,7 @@
         // 渲染表格
         function renderTable() {
             if(records.length === 0) {
-                recordTable.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-ink/50">暂无记录，点击"添加记录"开始录入</td></tr>';
+                recordTable.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-ink/50">暂无记录</td></tr>';
                 return;
             }
             // 按日期倒序
