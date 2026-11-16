@@ -1,0 +1,2806 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>村志村史智慧管理系统</title>
+    <script src="https://aisearch-task.bj.bcebos.com/static/tailwindcss-3.4.17.js"></script>
+    <script src="https://aisearch-task.bj.bcebos.com/static/echarts-5.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#8B4513',
+                        secondary: '#D2691E',
+                        accent: '#CD853F',
+                        paper: '#F5F1E6',
+                        ink: '#2C2416',
+                        seal: '#B22222',
+                        steel: '#4682B4',
+                    },
+                    fontFamily: {
+                        song: ['"Songti SC"', '"STSong"', '"SimSun"', 'serif'],
+                        hei: ['"PingFang SC"', '"Microsoft YaHei"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .paper-texture {
+                background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+            }
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .timeline-line::before {
+                content: '';
+                position: absolute;
+                left: 20px;
+                top: 0;
+                bottom: 0;
+                width: 2px;
+                background: linear-gradient(to bottom, #CD853F, #8B4513);
+            }
+        }
+    </style>
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background-color: #F5F1E6;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(139,69,19,0.1), rgba(210,105,30,0.1));
+            color: #8B4513;
+            border-left: 3px solid #8B4513;
+        }
+        .module-page {
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+        }
+        .module-page.active {
+            display: block;
+        }
+        .login-page {
+            display: none;
+        }
+        .login-page.active {
+            display: flex;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes loginFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .notification-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            width: 380px;
+            max-width: calc(100vw - 32px);
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            z-index: 100;
+            animation: slideDown 0.2s ease;
+        }
+        .notification-item.unread {
+            background: rgba(139,69,19,0.05);
+        }
+        .unread-dot {
+            position: absolute;
+            top: 18px;
+            right: 16px;
+            width: 8px;
+            height: 8px;
+            background: #B22222;
+            border-radius: 50%;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: modalIn 0.3s ease;
+        }
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .form-input:focus {
+            border-color: #8B4513;
+            box-shadow: 0 0 0 3px rgba(139,69,19,0.1);
+        }
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #2C2416;
+            margin-bottom: 6px;
+        }
+        @keyframes zoomIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .era-card {
+            transition: all 0.3s ease;
+        }
+        .era-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(139,69,19,0.15);
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #fff 0%, #F5F1E6 100%);
+            border: 1px solid rgba(139,69,19,0.1);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #8B4513, #A0522D);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #A0522D, #CD853F);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(139,69,19,0.3);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #B22222, #DC2626);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #DC2626, #EF4444);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(178,34,34,0.3);
+        }
+        .btn-secondary {
+            background: white;
+            color: #2C2416;
+            border: 1px solid #d1d5db;
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background: #f9fafb;
+            border-color: #9ca3af;
+        }
+        .btn-disabled {
+            background: #d1d5db !important;
+            color: #9ca3af !important;
+            cursor: not-allowed !important;
+            pointer-events: none;
+        }
+        .table-row:hover {
+            background-color: rgba(205,133,63,0.08);
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .badge-success { background: rgba(34,139,34,0.1); color: #228B22; }
+        .badge-warning { background: rgba(218,165,32,0.1); color: #DAA520; }
+        .badge-danger { background: rgba(178,34,34,0.1); color: #B22222; }
+        .badge-info { background: rgba(70,130,180,0.1); color: #4682B4; }
+        .readonly-toast {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(44,36,22,0.9);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            z-index: 9999;
+            animation: toastIn 0.3s ease;
+        }
+        .toast-success {
+            background: rgba(34,139,34,0.95) !important;
+        }
+        .toast-danger {
+            background: rgba(178,34,34,0.95) !important;
+        }
+        .toast-info {
+            background: rgba(70,130,180,0.95) !important;
+        }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        .role-badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .role-admin {
+            background: rgba(178,34,34,0.1);
+            color: #B22222;
+        }
+        .role-user {
+            background: rgba(70,130,180,0.1);
+            color: #4682B4;
+        }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalIn 0.3s ease-out;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+        }
+        .notification-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 8px;
+            width: 360px;
+            max-height: 480px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            z-index: 100;
+            animation: slideDown 0.2s ease-out;
+        }
+        .notification-item.unread {
+            background: rgba(139,69,19,0.05);
+            border-left: 3px solid #8B4513;
+        }
+        .notification-item:hover {
+            background: rgba(139,69,19,0.08);
+        }
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            outline: none;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        .form-input:focus {
+            border-color: #8B4513;
+            box-shadow: 0 0 0 3px rgba(139,69,19,0.1);
+        }
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #2C2416;
+            margin-bottom: 6px;
+        }
+        .unread-dot {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            background: #B22222;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body class="text-ink min-h-screen paper-texture">
+    <!-- 登录页面 -->
+    <div id="login-page" class="login-page active fixed inset-0 z-[100] items-center justify-center bg-gradient-to-br from-primary/5 via-paper to-accent/5">
+        <div class="w-full max-w-md mx-4" style="animation: loginFadeIn 0.5s ease-out;">
+            <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+                <div class="relative h-48 bg-gradient-to-br from-primary to-secondary">
+                    <img src="http://pic.rmb.bdstatic.com/bjh/news/19e5e967888a12367a3af00c473569c5.jpeg" alt="古村落" class="w-full h-full object-cover opacity-40">
+                    <div class="absolute inset-0 flex flex-col items-center justify-center text-white">
+                        <i class="ri-book-3-line text-5xl mb-3"></i>
+                        <h1 class="text-2xl font-bold font-song tracking-widest">村志村史智慧管理系统</h1>
+                        <p class="text-sm opacity-80 mt-1">传承乡土文化 · 留住美丽乡愁</p>
+                    </div>
+                </div>
+                <div class="p-8">
+                    <h2 class="text-xl font-bold font-song text-center mb-6">用户登录</h2>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-ink/70 mb-2">用户名</label>
+                        <div class="relative">
+                            <i class="ri-user-line absolute left-3 top-1/2 -translate-y-1/2 text-ink/40"></i>
+                            <input type="text" id="login-username" placeholder="请输入用户名" class="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition" value="admin">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-ink/70 mb-2">密码</label>
+                        <div class="relative">
+                            <i class="ri-lock-line absolute left-3 top-1/2 -translate-y-1/2 text-ink/40"></i>
+                            <input type="password" id="login-password" placeholder="请输入密码" class="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition" value="123456">
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-ink/70 mb-3">选择角色登录</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="role" value="admin" class="hidden peer" checked>
+                                <div class="border-2 border-gray-200 peer-checked:border-primary peer-checked:bg-primary/5 rounded-lg p-4 text-center transition">
+                                    <i class="ri-shield-user-line text-2xl text-primary mb-2"></i>
+                                    <p class="font-medium text-sm">管理员</p>
+                                    <p class="text-xs text-ink/60 mt-1">增删改查全部权限</p>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="role" value="user" class="hidden peer">
+                                <div class="border-2 border-gray-200 peer-checked:border-steel peer-checked:bg-steel/5 rounded-lg p-4 text-center transition">
+                                    <i class="ri-user-3-line text-2xl text-steel mb-2"></i>
+                                    <p class="font-medium text-sm">普通用户</p>
+                                    <p class="text-xs text-ink/60 mt-1">仅可查看内容</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button onclick="doLogin()" class="btn-primary w-full py-3 rounded-lg font-medium text-base flex items-center justify-center gap-2">
+                        <i class="ri-login-box-line"></i>
+                        登录系统
+                    </button>
+
+                    <div class="mt-6 p-4 bg-paper rounded-lg">
+                        <p class="text-xs text-ink/60 text-center">
+                            <i class="ri-information-line"></i>
+                            测试账号：管理员 admin/123456 ；普通用户 guest/123456
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主系统页面 -->
+    <div id="main-app" class="hidden">
+        <!-- 顶部导航栏 -->
+        <header class="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-primary to-secondary text-white shadow-lg">
+            <div class="flex items-center justify-between px-4 py-3">
+                <div class="flex items-center gap-3">
+                    <i class="ri-book-3-line text-2xl"></i>
+                    <div>
+                        <h1 class="text-lg font-bold font-song tracking-wide">村志村史智慧管理系统</h1>
+                        <p class="text-[11px] opacity-80">传承乡土文化 · 留住美丽乡愁</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-white/10" id="user-info-header">
+                        <span id="user-name-display">管理员</span>
+                        <span class="role-badge role-admin" id="user-role-display">管理员</span>
+                    </div>
+                    <!-- 通知按钮 -->
+                    <div class="relative">
+                        <button id="notification-btn" class="relative p-2 hover:bg-white/20 rounded-full transition" aria-label="通知消息" onclick="toggleNotificationPanel()">
+                            <i class="ri-notification-3-line text-xl"></i>
+                            <span id="notification-badge" class="absolute top-0 right-0 min-w-[18px] h-[18px] bg-seal rounded-full text-[10px] flex items-center justify-center font-bold">3</span>
+                        </button>
+                        <!-- 通知下拉面板 -->
+                        <div id="notification-panel" class="notification-dropdown hidden">
+                            <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+                                <h3 class="font-bold font-song text-ink">通知中心</h3>
+                                <button onclick="markAllAsRead()" class="text-xs text-primary hover:text-primary/80">全部已读</button>
+                            </div>
+                            <div id="notification-list" class="max-h-[380px] overflow-y-auto">
+                                <!-- 通知项通过JS渲染 -->
+                            </div>
+                            <div class="p-3 border-t border-gray-100 text-center">
+                                <button onclick="closeNotificationPanel(); switchPage('notifications');" class="text-xs text-ink/60 hover:text-primary">查看全部通知</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="doLogout()" class="p-2 hover:bg-white/20 rounded-full transition" title="退出登录">
+                        <i class="ri-logout-box-r-line text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- 移动端用户信息 -->
+            <div class="md:hidden px-4 pb-2 flex items-center justify-between text-sm">
+                <div class="flex items-center gap-2">
+                    <i class="ri-user-line"></i>
+                    <span id="mobile-user-name">管理员</span>
+                    <span class="role-badge role-admin" id="mobile-user-role">管理员</span>
+                </div>
+                <span class="text-xs opacity-70" id="permission-hint">拥有完整操作权限</span>
+            </div>
+        </header>
+
+        <!-- 主内容区 -->
+        <div class="flex pt-16 md:pt-16 pb-20 md:pb-4">
+            <!-- 侧边导航 - 桌面端 -->
+            <aside class="hidden md:flex md:w-64 md:flex-col md:fixed md:top-16 md:bottom-0 bg-white/70 backdrop-blur-sm border-r border-primary/10">
+                <nav class="flex-1 py-4 overflow-y-auto" id="desktop-nav">
+                    <!-- 导航项通过JS生成 -->
+                </nav>
+                <div class="p-4 border-t border-primary/10">
+                    <div class="text-xs text-primary/60 text-center">
+                        <p class="font-song">盛世修志 · 志载盛世</p>
+                        <p class="mt-1">v2.2.0 · 2026 · 功能完整版</p>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- 内容区域 -->
+            <main class="flex-1 md:ml-64 p-4 md:p-6 max-w-7xl mx-auto w-full">
+                <!-- 首页/数据概览 -->
+                <section id="page-dashboard" class="module-page active">
+                    <!-- 只读提示条（普通用户显示） -->
+                    <div id="readonly-banner" class="hidden mb-4 p-3 rounded-lg bg-steel/10 border border-steel/20 flex items-center gap-3">
+                        <i class="ri-eye-line text-steel text-xl"></i>
+                        <div>
+                            <p class="font-medium text-steel">您当前以普通用户身份登录</p>
+                            <p class="text-xs text-steel/70">仅可查看内容，如需编辑操作请联系管理员获取权限</p>
+                        </div>
+                    </div>
+
+                    <!-- Hero区域 -->
+                    <div class="relative rounded-2xl overflow-hidden mb-6 h-48 md:h-64">
+                        <img src="http://pic.rmb.bdstatic.com/bjh/news/19e5e967888a12367a3af00c473569c5.jpeg" alt="古村落全景" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/40 to-transparent"></div>
+                        <div class="absolute bottom-0 left-0 right-0 p-4 md:p-6 text-white">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="px-2 py-0.5 bg-seal/90 rounded text-xs">国家级传统村落</span>
+                                <span class="px-2 py-0.5 bg-accent/90 rounded text-xs">历史文化名村</span>
+                            </div>
+                            <h2 class="text-2xl md:text-3xl font-bold font-song mb-1">上周湾村志村史编纂工程</h2>
+                            <p class="text-white/80 text-sm md:text-base">建村XXX年 · 全村人口XXX人 · x个村民小组</p>
+                        </div>
+                    </div>
+
+                    <!-- 统计卡片 -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div class="stat-card rounded-xl p-4 shadow-sm">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                                    <i class="ri-book-open-line text-primary text-xl"></i>
+                                </div>
+                                <span class="text-green-600 text-xs"><i class="ri-arrow-up-line"></i>12%</span>
+                            </div>
+                            <p class="text-2xl font-bold text-ink" id="stat-articles">286</p>
+                            <p class="text-sm text-ink/60">志书条目总数</p>
+                        </div>
+                        <div class="stat-card rounded-xl p-4 shadow-sm">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="w-10 h-10 rounded-lg bg-seal/10 flex items-center justify-center">
+                                    <i class="ri-time-line text-seal text-xl"></i>
+                                </div>
+                                <span class="text-green-600 text-xs"><i class="ri-arrow-up-line"></i>8%</span>
+                            </div>
+                            <p class="text-2xl font-bold text-ink" id="stat-events">152</p>
+                            <p class="text-sm text-ink/60">历史事件记录</p>
+                        </div>
+                        <div class="stat-card rounded-xl p-4 shadow-sm">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                                    <i class="ri-user-star-line text-accent text-xl"></i>
+                                </div>
+                                <span class="text-green-600 text-xs"><i class="ri-arrow-up-line"></i>5%</span>
+                            </div>
+                            <p class="text-2xl font-bold text-ink" id="stat-people">94</p>
+                            <p class="text-sm text-ink/60">人物传记</p>
+                        </div>
+                        <div class="stat-card rounded-xl p-4 shadow-sm">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="w-10 h-10 rounded-lg bg-steel/10 flex items-center justify-center">
+                                    <i class="ri-folder-image-line text-steel text-xl"></i>
+                                </div>
+                                <span class="text-green-600 text-xs"><i class="ri-arrow-up-line"></i>18%</span>
+                            </div>
+                            <p class="text-2xl font-bold text-ink" id="stat-archives">1280</p>
+                            <p class="text-sm text-ink/60">档案资料数量</p>
+                        </div>
+                    </div>
+
+                    <!-- 编纂进度 & 近期动态 -->
+                    <div class="grid md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-white rounded-xl p-5 shadow-sm border border-primary/5">
+                            <h3 class="text-lg font-bold font-song mb-4 flex items-center gap-2">
+                                <i class="ri-pie-chart-line text-primary"></i>
+                                编纂进度概览
+                            </h3>
+                            <div id="progress-chart" class="h-64"></div>
+                        </div>
+                        <div class="bg-white rounded-xl p-5 shadow-sm border border-primary/5">
+                            <h3 class="text-lg font-bold font-song mb-4 flex items-center gap-2">
+                                <i class="ri-history-line text-primary"></i>
+                                近期编纂动态
+                            </h3>
+                            <div class="space-y-4" id="recent-activities">
+                                <!-- 动态列表通过JS渲染 -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 快速入口 -->
+                    <div class="bg-white rounded-xl p-5 shadow-sm border border-primary/5 mb-6">
+                        <h3 class="text-lg font-bold font-song mb-4 flex items-center gap-2">
+                            <i class="ri-flashlight-line text-primary"></i>
+                            快捷操作
+                        </h3>
+                        <div class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-11 gap-3 md:gap-4" id="quick-actions">
+                            <button class="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-primary/5 transition" onclick="switchPage('chronicle')" title="查看村志">
+                                <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <i class="ri-book-open-line text-primary text-xl"></i>
+                                </div>
+                                <span class="text-xs">查看村志</span>
+                            </button>
+                            <button class="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-seal/5 transition" onclick="switchPage('history')" title="查看村史">
+                                <div class="w-12 h-12 rounded-full bg-seal/10 flex items-center justify-center">
+                                    <i class="ri-time-line text-seal text-xl"></i>
+                                </div>
+                                <span class="text-xs">查看村史</span>
+                            </button>
+                            <button class="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-accent/5 transition" onclick="switchPage('people')" title="查看人物">
+                                <div class="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
+                                    <i class="ri-user-star-line text-accent text-xl"></i>
+                                </div>
+                                <span class="text-xs">查看人物</span>
+                            </button>
+                            <button class="admin-only flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-primary/5 transition" onclick="requireAdmin(() => openAddModal('article'))">
+                                <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <i class="ri-edit-line text-primary text-xl"></i>
+                                </div>
+                                <span class="text-xs">新建条目</span>
+                            </button>
+                            <button class="admin-only flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-primary/5 transition" onclick="requireAdmin(() => openAddModal('event'))">
+                                <div class="w-12 h-12 rounded-full bg-seal/10 flex items-center justify-center">
+                                    <i class="ri-calendar-event-line text-seal text-xl"></i>
+                                </div>
+                                <span class="text-xs">添加事件</span>
+                            </button>
+                            <button class="admin-only flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-primary/5 transition" onclick="requireAdmin(() => openAddModal('person'))">
+                                <div class="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
+                                    <i class="ri-user-add-line text-accent text-xl"></i>
+                                </div>
+                                <span class="text-xs">人物录入</span>
+                            </button>
+                            <button class="admin-only flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-primary/5 transition" onclick="requireAdmin(() => openAddModal('archive'))">
+                                <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                                    <i class="ri-upload-cloud-line text-blue-600 text-xl"></i>
+                                </div>
+                                <span class="text-xs">上传档案</span>
+                            </button>
+                            <button class="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-green-50 transition" onclick="switchPage('statistics')">
+                                <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                                    <i class="ri-bar-chart-box-line text-green-600 text-xl"></i>
+                                </div>
+                                <span class="text-xs">统计报表</span>
+                            </button>
+                            <button class="admin-only flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-purple-50 transition" onclick="requireAdmin(() => showToast('口述记录功能开发中', 'info'))">
+                                <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                                    <i class="ri-mic-line text-purple-600 text-xl"></i>
+                                </div>
+                                <span class="text-xs">口述记录</span>
+                            </button>
+                            <button class="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-orange-50 transition" onclick="openImageGallery()">
+                                <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
+                                    <i class="ri-image-line text-orange-600 text-xl"></i>
+                                </div>
+                                <span class="text-xs">图片浏览</span>
+                            </button>
+                            <button class="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-pink-50 transition" onclick="openSearchModal()">
+                                <div class="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center">
+                                    <i class="ri-search-line text-pink-600 text-xl"></i>
+                                </div>
+                                <span class="text-xs">全文检索</span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 村志编纂管理 -->
+                <section id="page-chronicle" class="module-page">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold font-song">村志编纂管理</h2>
+                            <p class="text-ink/60 text-sm mt-1">横排门类，全面记录村庄自然、社会、经济、文化各方面</p>
+                        </div>
+                        <button id="btn-new-article" class="admin-only btn-primary px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium" onclick="requireAdmin(() => openAddModal('article'))">
+                            <i class="ri-add-line"></i>新建志书条目
+                        </button>
+                    </div>
+
+                    <!-- 志书分类标签 -->
+                    <div class="flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-hide" id="chronicle-filters">
+                        <button class="px-4 py-2 rounded-full bg-primary text-white text-sm whitespace-nowrap chronicle-filter-btn" data-category="all" onclick="filterChronicle('all')">全部篇目</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 chronicle-filter-btn" data-category="地理志" onclick="filterChronicle('地理志')">地理志</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 chronicle-filter-btn" data-category="人口志" onclick="filterChronicle('人口志')">人口志</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 chronicle-filter-btn" data-category="经济志" onclick="filterChronicle('经济志')">经济志</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 chronicle-filter-btn" data-category="民俗志" onclick="filterChronicle('民俗志')">民俗志</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 chronicle-filter-btn" data-category="教育志" onclick="filterChronicle('教育志')">教育志</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 chronicle-filter-btn" data-category="人物志" onclick="filterChronicle('人物志')">人物志</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 chronicle-filter-btn" data-category="艺文志" onclick="filterChronicle('艺文志')">艺文志</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 chronicle-filter-btn" data-category="大事记" onclick="filterChronicle('大事记')">大事记</button>
+                    </div>
+
+                    <!-- 搜索和筛选 -->
+                    <div class="bg-white rounded-xl p-4 shadow-sm border border-primary/5 mb-4">
+                        <div class="flex flex-col md:flex-row gap-3">
+                            <div class="flex-1 relative">
+                                <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-ink/40"></i>
+                                <input type="text" id="chronicle-search-input" placeholder="搜索条目标题、关键词、编纂人..." class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition" oninput="searchChronicle()">
+                            </div>
+                            <div class="flex gap-2">
+                                <select id="chronicle-status-select" class="px-4 py-2.5 rounded-lg border border-gray-200 focus:border-primary outline-none text-sm bg-white" onchange="searchChronicle()">
+                                    <option value="">全部状态</option>
+                                    <option value="待编纂">待编纂</option>
+                                    <option value="编纂中">编纂中</option>
+                                    <option value="初审中">初审中</option>
+                                    <option value="已定稿">已定稿</option>
+                                    <option value="已发布">已发布</option>
+                                </select>
+                                <button onclick="resetChronicleSearch()" class="px-4 py-2.5 rounded-lg border border-gray-200 hover:bg-gray-50 flex items-center gap-1 text-sm">
+                                    <i class="ri-refresh-line"></i>重置
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 条目列表 -->
+                    <div class="bg-white rounded-xl shadow-sm border border-primary/5 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-primary/5">
+                                    <tr>
+                                        <th class="text-left px-4 py-3 text-sm font-medium text-ink/70">条目名称</th>
+                                        <th class="text-left px-4 py-3 text-sm font-medium text-ink/70">所属篇目</th>
+                                        <th class="text-left px-4 py-3 text-sm font-medium text-ink/70 hidden md:table-cell">编纂人</th>
+                                        <th class="text-left px-4 py-3 text-sm font-medium text-ink/70 hidden md:table-cell">字数</th>
+                                        <th class="text-left px-4 py-3 text-sm font-medium text-ink/70">状态</th>
+                                        <th class="text-left px-4 py-3 text-sm font-medium text-ink/70 hidden md:table-cell">更新时间</th>
+                                        <th class="text-left px-4 py-3 text-sm font-medium text-ink/70">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="chronicle-table-body">
+                                    <!-- 表格内容由JS动态渲染 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 村史时间轴 -->
+                <section id="page-history" class="module-page">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold font-song">村史时间轴</h2>
+                            <p class="text-ink/60 text-sm mt-1">纵向梳理628年发展脉络，记录重大历史事件</p>
+                        </div>
+                        <button class="admin-only btn-primary px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium" onclick="requireAdmin(() => openAddModal('event'))">
+                            <i class="ri-add-line"></i>添加历史事件
+                        </button>
+                    </div>
+
+                    <!-- 历史时期筛选 -->
+                    <div class="flex gap-2 overflow-x-auto pb-3 mb-6 scrollbar-hide" id="history-filters">
+                        <button class="px-4 py-2 rounded-full bg-primary text-white text-sm whitespace-nowrap history-filter-btn" data-era="all" onclick="filterHistory('all')">全部时期</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 history-filter-btn" data-era="明清时期" onclick="filterHistory('明清时期')">明清时期</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 history-filter-btn" data-era="民国时期" onclick="filterHistory('民国时期')">民国时期</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 history-filter-btn" data-era="抗日战争时期" onclick="filterHistory('抗日战争时期')">抗日战争时期</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 history-filter-btn" data-era="建国初期" onclick="filterHistory('建国初期')">建国初期</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 history-filter-btn" data-era="改革开放时期" onclick="filterHistory('改革开放时期')">改革开放时期</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 history-filter-btn" data-era="新时代" onclick="filterHistory('新时代')">新时代</button>
+                    </div>
+
+                    <div class="relative timeline-line pl-12 space-y-6" id="history-timeline">
+                        <!-- 时间轴内容由JS动态渲染 -->
+                    </div>
+                </section>
+
+                <!-- 人物志 -->
+                <section id="page-people" class="module-page">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold font-song">人物志管理</h2>
+                            <p class="text-ink/60 text-sm mt-1">记录先贤英烈、模范人物、能工巧匠的生平事迹</p>
+                        </div>
+                        <button class="admin-only btn-primary px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium" onclick="requireAdmin(() => openAddModal('person'))">
+                            <i class="ri-add-line"></i>新增人物
+                        </button>
+                    </div>
+
+                    <!-- 人物分类筛选 -->
+                    <div class="flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-hide" id="people-filters">
+                        <button class="px-4 py-2 rounded-full bg-primary text-white text-sm whitespace-nowrap people-filter-btn" data-category="all" onclick="filterPeople('all')">全部人物</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 people-filter-btn" data-category="历史名贤" onclick="filterPeople('历史名贤')">历史名贤</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 people-filter-btn" data-category="革命先烈" onclick="filterPeople('革命先烈')">革命先烈</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 people-filter-btn" data-category="劳动模范" onclick="filterPeople('劳动模范')">劳动模范</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 people-filter-btn" data-category="能工巧匠" onclick="filterPeople('能工巧匠')">能工巧匠</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 people-filter-btn" data-category="在外乡贤" onclick="filterPeople('在外乡贤')">在外乡贤</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 people-filter-btn" data-category="现任干部" onclick="filterPeople('现任干部')">现任干部</button>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4" id="people-grid">
+                        <!-- 人物卡片由JS动态渲染 -->
+                    </div>
+                </section>
+
+                <!-- 档案管理 -->
+                <section id="page-archive" class="module-page">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold font-song">数字化档案库</h2>
+                            <p class="text-ink/60 text-sm mt-1">文献、照片、口述录音、影像资料统一管理</p>
+                        </div>
+                        <button class="admin-only btn-primary px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium" onclick="requireAdmin(() => openAddModal('archive'))">
+                            <i class="ri-upload-cloud-line"></i>上传档案
+                        </button>
+                    </div>
+
+                    <!-- 档案类型统计 -->
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-primary/5 text-center">
+                            <div class="w-12 h-12 mx-auto rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                                <i class="ri-file-text-line text-primary text-xl"></i>
+                            </div>
+                            <p class="text-xl font-bold" id="stat-docs">286</p>
+                            <p class="text-xs text-ink/60">文献族谱</p>
+                        </div>
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-primary/5 text-center">
+                            <div class="w-12 h-12 mx-auto rounded-full bg-seal/10 flex items-center justify-center mb-2">
+                                <i class="ri-image-line text-seal text-xl"></i>
+                            </div>
+                            <p class="text-xl font-bold" id="stat-photos">642</p>
+                            <p class="text-xs text-ink/60">老照片</p>
+                        </div>
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-primary/5 text-center">
+                            <div class="w-12 h-12 mx-auto rounded-full bg-accent/10 flex items-center justify-center mb-2">
+                                <i class="ri-mic-line text-accent text-xl"></i>
+                            </div>
+                            <p class="text-xl font-bold" id="stat-audios">48</p>
+                            <p class="text-xs text-ink/60">口述录音</p>
+                        </div>
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-primary/5 text-center">
+                            <div class="w-12 h-12 mx-auto rounded-full bg-purple-100 flex items-center justify-center mb-2">
+                                <i class="ri-video-line text-purple-600 text-xl"></i>
+                            </div>
+                            <p class="text-xl font-bold" id="stat-videos">36</p>
+                            <p class="text-xs text-ink/60">影像视频</p>
+                        </div>
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-primary/5 text-center">
+                            <div class="w-12 h-12 mx-auto rounded-full bg-green-100 flex items-center justify-center mb-2">
+                                <i class="ri-book-2-line text-green-600 text-xl"></i>
+                            </div>
+                            <p class="text-xl font-bold">128</p>
+                            <p class="text-xs text-ink/60">古籍方志</p>
+                        </div>
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-primary/5 text-center">
+                            <div class="w-12 h-12 mx-auto rounded-full bg-orange-100 flex items-center justify-center mb-2">
+                                <i class="ri-archive-line text-orange-600 text-xl"></i>
+                            </div>
+                            <p class="text-xl font-bold">140</p>
+                            <p class="text-xs text-ink/60">实物档案</p>
+                        </div>
+                    </div>
+
+                    <!-- 档案列表 -->
+                    <div class="bg-white rounded-xl shadow-sm border border-primary/5 overflow-hidden">
+                        <div class="p-4 border-b border-gray-100">
+                            <div class="flex gap-2" id="archive-filters">
+                                <button class="px-3 py-1.5 rounded-full bg-primary text-white text-sm archive-filter-btn" data-type="all" onclick="filterArchive('all')">全部档案</button>
+                                <button class="px-3 py-1.5 rounded-full hover:bg-gray-100 text-sm text-ink/70 archive-filter-btn" data-type="文献族谱" onclick="filterArchive('文献族谱')">文献</button>
+                                <button class="px-3 py-1.5 rounded-full hover:bg-gray-100 text-sm text-ink/70 archive-filter-btn" data-type="老照片" onclick="filterArchive('老照片')">照片</button>
+                                <button class="px-3 py-1.5 rounded-full hover:bg-gray-100 text-sm text-ink/70 archive-filter-btn" data-type="口述录音" onclick="filterArchive('口述录音')">音频</button>
+                                <button class="px-3 py-1.5 rounded-full hover:bg-gray-100 text-sm text-ink/70 archive-filter-btn" data-type="影像视频" onclick="filterArchive('影像视频')">视频</button>
+                            </div>
+                        </div>
+                        <div class="divide-y divide-gray-100" id="archive-list">
+                            <!-- 档案列表由JS动态渲染 -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 通知中心页面 -->
+                <section id="page-notifications" class="module-page">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold font-song">通知中心</h2>
+                            <p class="text-ink/60 text-sm mt-1">查看全部系统通知和编纂动态消息</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="markAllAsRead()" class="px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 flex items-center gap-2 text-sm">
+                                <i class="ri-check-double-line"></i>全部已读
+                            </button>
+                            <button onclick="clearAllNotifications()" class="admin-only px-4 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 flex items-center gap-2 text-sm">
+                                <i class="ri-delete-bin-line"></i>清空通知
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 通知筛选标签 -->
+                    <div class="flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-hide" id="notification-filters">
+                        <button class="px-4 py-2 rounded-full bg-primary text-white text-sm whitespace-nowrap notif-filter-btn" data-type="all" onclick="filterNotifications('all')">全部通知</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 notif-filter-btn" data-type="unread" onclick="filterNotifications('unread')">未读消息</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 notif-filter-btn" data-type="success" onclick="filterNotifications('success')">完成通知</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 notif-filter-btn" data-type="info" onclick="filterNotifications('info')">系统消息</button>
+                        <button class="px-4 py-2 rounded-full bg-white border border-primary/20 text-ink/70 text-sm whitespace-nowrap hover:bg-primary/5 notif-filter-btn" data-type="warning" onclick="filterNotifications('warning')">提醒通知</button>
+                    </div>
+
+                    <!-- 通知统计卡片 -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-primary/5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                                    <i class="ri-notification-3-line text-primary text-xl"></i>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold" id="notif-total">0</p>
+                                    <p class="text-xs text-ink/60">全部通知</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-primary/5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-seal/10 flex items-center justify-center">
+                                    <i class="ri-mail-unread-line text-seal text-xl"></i>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold" id="notif-unread">0</p>
+                                    <p class="text-xs text-ink/60">未读消息</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-primary/5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                                    <i class="ri-checkbox-circle-line text-green-600 text-xl"></i>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold" id="notif-success">0</p>
+                                    <p class="text-xs text-ink/60">完成通知</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl p-4 shadow-sm border border-primary/5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">
+                                    <i class="ri-alert-line text-yellow-600 text-xl"></i>
+                                </div>
+                                <div>
+                                    <p class="text-2xl font-bold" id="notif-warning">0</p>
+                                    <p class="text-xs text-ink/60">提醒通知</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 通知列表 -->
+                    <div class="bg-white rounded-xl shadow-sm border border-primary/5 overflow-hidden">
+                        <div id="notification-full-list" class="divide-y divide-gray-100">
+                            <!-- 通知列表由JS动态渲染 -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 统计分析 -->
+                <section id="page-statistics" class="module-page">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold font-song">统计分析</h2>
+                        <p class="text-ink/60 text-sm mt-1">编纂进度、人员贡献、数据趋势可视化分析</p>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-xl p-5 shadow-sm border border-primary/5">
+                            <h3 class="text-lg font-bold font-song mb-4 flex items-center gap-2">
+                                <i class="ri-bar-chart-horizontal-line text-primary"></i>
+                                各篇目编纂进度
+                            </h3>
+                            <div id="chart-category" class="h-72"></div>
+                        </div>
+                        <div class="bg-white rounded-xl p-5 shadow-sm border border-primary/5">
+                            <h3 class="text-lg font-bold font-song mb-4 flex items-center gap-2">
+                                <i class="ri-pie-chart-line text-seal"></i>
+                                编纂人员贡献占比
+                            </h3>
+                            <div id="chart-contributor" class="h-72"></div>
+                        </div>
+                        <div class="bg-white rounded-xl p-5 shadow-sm border border-primary/5">
+                            <h3 class="text-lg font-bold font-song mb-4 flex items-center gap-2">
+                                <i class="ri-line-chart-line text-green-600"></i>
+                                2026年月度编纂字数趋势
+                            </h3>
+                            <div id="chart-trend" class="h-72"></div>
+                        </div>
+                        <div class="bg-white rounded-xl p-5 shadow-sm border border-primary/5">
+                            <h3 class="text-lg font-bold font-song mb-4 flex items-center gap-2">
+                                <i class="ri-donut-chart-line text-accent"></i>
+                                档案资源类型分布
+                            </h3>
+                            <div id="chart-archive" class="h-72"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 系统设置 -->
+                <section id="page-settings" class="module-page">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold font-song">系统设置</h2>
+                        <p class="text-ink/60 text-sm mt-1">系统配置、用户管理、数据备份</p>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-xl p-5 shadow-sm border border-primary/5">
+                            <h3 class="text-lg font-bold font-song mb-4 flex items-center gap-2">
+                                <i class="ri-village-line text-primary"></i>
+                                村落基本信息
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">村落名称</label>
+                                    <input type="text" value="桃源村" class="form-input" readonly id="setting-village">
+                                    <p class="text-xs text-ink/50 mt-1 user-only-hint hidden">普通用户不可修改，仅管理员可编辑</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">建村年份</label>
+                                    <input type="text" value="明洪武三十一年（1398年）" class="form-input" readonly>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">常住人口</label>
+                                    <input type="text" value="2156人" class="form-input" readonly>
+                                </div>
+                                <button class="admin-only btn-primary px-4 py-2 rounded-lg text-sm" onclick="requireAdmin(() => { showToast('村落信息已保存成功', 'success'); addNotification('info', '保存设置', '村落基本信息已更新保存'); })">
+                                    保存修改
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="admin-only bg-white rounded-xl p-5 shadow-sm border border-primary/5">
+                            <h3 class="text-lg font-bold font-song mb-4 flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <i class="ri-shield-keyhole-line text-seal"></i>
+                                    用户权限管理
+                                </div>
+                                <button class="text-xs font-normal px-3 py-1 bg-primary/10 text-primary rounded-full hover:bg-primary/20">
+                                    <i class="ri-add-line"></i> 添加用户
+                                </button>
+                            </h3>
+                            <div class="space-y-3" id="user-list">
+                                <!-- 用户列表由JS渲染 -->
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl p-5 shadow-sm border border-primary/5">
+                            <h3 class="text-lg font-bold font-song mb-4 flex items-center gap-2">
+                                <i class="ri-database-2-line text-green-600"></i>
+                                数据备份与导出
+                            </h3>
+                            <div class="space-y-3">
+                                <button class="admin-only w-full py-3 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2 transition" onclick="requireAdmin(() => { showToast('全量数据备份完成', 'success'); addNotification('success', '数据备份', '系统全量数据备份已完成，备份文件已生成'); })">
+                                    <i class="ri-download-cloud-line text-primary"></i>
+                                    <span>全量数据备份导出</span>
+                                </button>
+                                <button class="w-full py-3 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2 transition" onclick="showToast('村志Word文档正在导出，请稍候...', 'info')">
+                                    <i class="ri-file-word-line text-blue-600"></i>
+                                    <span>导出村志Word文档</span>
+                                </button>
+                                <button class="w-full py-3 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2 transition" onclick="showToast('村史PDF文档正在生成，请稍候...', 'info')">
+                                    <i class="ri-file-pdf-line text-red-600"></i>
+                                    <span>导出村史PDF版本</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- 底部导航 - 移动端 -->
+        <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-primary/10 z-50">
+            <div class="grid grid-cols-5" id="mobile-nav">
+                <!-- 移动端导航通过JS生成 -->
+            </div>
+        </nav>
+    </div>
+
+    <!-- 通用表单弹窗 -->
+    <div id="form-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="p-5 border-b border-gray-100 flex items-center justify-between">
+                <h3 class="text-lg font-bold font-song" id="modal-title">新增条目</h3>
+                <button onclick="closeModal()" class="p-2 hover:bg-gray-100 rounded-full transition">
+                    <i class="ri-close-line text-xl"></i>
+                </button>
+            </div>
+            <form id="data-form" class="p-5 space-y-4" onsubmit="submitForm(event)">
+                <input type="hidden" id="form-type">
+                <input type="hidden" id="form-edit-id">
+                
+                <div id="form-fields">
+                    <!-- 表单字段动态生成 -->
+                </div>
+
+                <div class="flex gap-3 pt-4 border-t border-gray-100">
+                    <button type="button" onclick="closeModal()" class="btn-secondary flex-1 py-2.5 rounded-lg font-medium">取消</button>
+                    <button type="submit" class="btn-primary flex-1 py-2.5 rounded-lg font-medium">确认保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 详情查看弹窗 -->
+    <div id="detail-modal" class="modal-overlay hidden">
+        <div class="modal-content max-w-2xl">
+            <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+                <h3 class="text-xl font-bold font-song" id="detail-title">详情查看</h3>
+                <button onclick="closeDetailModal()" class="p-2 hover:bg-gray-100 rounded-full transition">
+                    <i class="ri-close-line text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6" id="detail-content">
+                <!-- 详情内容动态渲染 -->
+            </div>
+            <div class="p-6 border-t border-gray-100 flex justify-end gap-3">
+                <button onclick="closeDetailModal()" class="btn-secondary px-6 py-2 rounded-lg">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认弹窗 -->
+    <div id="delete-modal" class="modal-overlay hidden">
+        <div class="modal-content max-w-md">
+            <div class="p-6 text-center">
+                <div class="w-16 h-16 mx-auto rounded-full bg-red-100 flex items-center justify-center mb-4">
+                    <i class="ri-delete-bin-line text-3xl text-seal"></i>
+                </div>
+                <h3 class="text-xl font-bold font-song mb-2">确认删除</h3>
+                <p class="text-ink/70 mb-6" id="delete-confirm-text">您确定要删除这条记录吗？此操作不可恢复，请谨慎操作。</p>
+                <input type="hidden" id="delete-type">
+                <input type="hidden" id="delete-id">
+                <div class="flex gap-3">
+                    <button onclick="closeDeleteModal()" class="btn-secondary flex-1 py-2.5 rounded-lg font-medium">取消</button>
+                    <button onclick="confirmDelete()" class="btn-danger flex-1 py-2.5 rounded-lg font-medium">确认删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图片浏览画廊弹窗 -->
+    <div id="gallery-modal" class="modal-overlay hidden" style="background: rgba(0,0,0,0.92); z-index: 2000;">
+        <div class="relative w-full h-full flex flex-col" style="animation: lightboxIn 0.3s ease;">
+            <!-- 顶部工具栏 -->
+            <div class="flex items-center justify-between px-6 py-4 text-white">
+                <div>
+                    <h3 class="text-xl font-bold font-song flex items-center gap-2">
+                        <i class="ri-image-line text-orange-400"></i>
+                        村史影像馆
+                    </h3>
+                    <p class="text-white/60 text-sm mt-1" id="gallery-count">共 12 张珍贵历史照片</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="hidden md:flex items-center gap-2 bg-white/10 rounded-full px-3 py-1.5">
+                        <button onclick="filterGallery('all')" class="gallery-filter active px-3 py-1 rounded-full text-sm bg-white/20" data-filter="all">全部</button>
+                        <button onclick="filterGallery('old')" class="gallery-filter px-3 py-1 rounded-full text-sm hover:bg-white/10" data-filter="old">老照片</button>
+                        <button onclick="filterGallery('building')" class="gallery-filter px-3 py-1 rounded-full text-sm hover:bg-white/10" data-filter="building">古建筑</button>
+                        <button onclick="filterGallery('people')" class="gallery-filter px-3 py-1 rounded-full text-sm hover:bg-white/10" data-filter="people">人物</button>
+                        <button onclick="filterGallery('activity')" class="gallery-filter px-3 py-1 rounded-full text-sm hover:bg-white/10" data-filter="activity">民俗活动</button>
+                    </div>
+                    <button onclick="closeGallery()" class="p-2 hover:bg-white/20 rounded-full transition">
+                        <i class="ri-close-line text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 图片网格区域 -->
+            <div class="flex-1 overflow-y-auto px-6 pb-6">
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="gallery-grid">
+                    <!-- 图片由JS动态渲染 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 单张图片灯箱放大预览 -->
+    <div id="lightbox-modal" class="modal-overlay hidden" style="background: rgba(0,0,0,0.95); z-index: 3000;">
+        <button onclick="closeLightbox()" class="absolute top-6 right-6 text-white/80 hover:text-white p-2 hover:bg-white/10 rounded-full transition z-10">
+            <i class="ri-close-line text-3xl"></i>
+        </button>
+        <button onclick="prevImage()" class="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 text-white/80 hover:text-white p-3 hover:bg-white/10 rounded-full transition z-10">
+            <i class="ri-arrow-left-s-line text-4xl"></i>
+        </button>
+        <button onclick="nextImage()" class="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 text-white/80 hover:text-white p-3 hover:bg-white/10 rounded-full transition z-10">
+            <i class="ri-arrow-right-s-line text-4xl"></i>
+        </button>
+        <div class="flex flex-col items-center justify-center w-full h-full p-4" style="animation: zoomIn 0.3s ease;">
+            <img id="lightbox-img" src="" alt="" class="max-w-[90vw] max-h-[75vh] object-contain rounded-lg shadow-2xl">
+            <div class="mt-4 text-center text-white">
+                <h4 id="lightbox-title" class="text-lg font-bold font-song mb-1">图片标题</h4>
+                <p id="lightbox-desc" class="text-white/70 text-sm">图片描述</p>
+                <p id="lightbox-index" class="text-white/50 text-xs mt-2">1 / 12</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 全文检索弹窗 -->
+    <div id="search-modal" class="modal-overlay hidden" style="z-index: 2000;">
+        <div class="modal-content max-w-3xl w-full" style="max-height: 85vh;">
+            <div class="p-5 border-b border-gray-100">
+                <div class="flex items-center gap-3 mb-4">
+                    <i class="ri-search-line text-primary text-2xl"></i>
+                    <h3 class="text-xl font-bold font-song flex-1">全文检索</h3>
+                    <button onclick="closeSearchModal()" class="p-2 hover:bg-gray-100 rounded-full transition">
+                        <i class="ri-close-line text-xl"></i>
+                    </button>
+                </div>
+                <div class="relative">
+                    <i class="ri-search-line absolute left-4 top-1/2 -translate-y-1/2 text-ink/40 text-xl"></i>
+                    <input type="text" id="search-input" placeholder="输入关键词搜索志书条目、历史事件、人物、档案资料..." class="w-full pl-12 pr-14 py-3.5 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition text-base" oninput="performSearch()">
+                    <button class="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition" onclick="performSearch()">
+                        <i class="ri-search-line"></i>
+                    </button>
+                </div>
+                <div class="flex flex-wrap gap-2 mt-3">
+                    <span class="text-xs text-ink/50">热门搜索：</span>
+                    <button onclick="quickSearch('王氏宗祠')" class="text-xs px-2 py-0.5 bg-primary/5 text-primary rounded-full hover:bg-primary/10 transition">王氏宗祠</button>
+                    <button onclick="quickSearch('抗战')" class="text-xs px-2 py-0.5 bg-primary/5 text-primary rounded-full hover:bg-primary/10 transition">抗战</button>
+                    <button onclick="quickSearch('传统村落')" class="text-xs px-2 py-0.5 bg-primary/5 text-primary rounded-full hover:bg-primary/10 transition">传统村落</button>
+                    <button onclick="quickSearch('族谱')" class="text-xs px-2 py-0.5 bg-primary/5 text-primary rounded-full hover:bg-primary/10 transition">族谱</button>
+                    <button onclick="quickSearch('木雕')" class="text-xs px-2 py-0.5 bg-primary/5 text-primary rounded-full hover:bg-primary/10 transition">木雕</button>
+                </div>
+            </div>
+
+            <!-- 搜索结果区域 -->
+            <div id="search-results" class="overflow-y-auto" style="max-height: calc(85vh - 180px);">
+                <div class="p-10 text-center text-ink/50">
+                    <i class="ri-search-line text-5xl mb-3 opacity-30"></i>
+                    <p class="text-lg">输入关键词开始搜索</p>
+                    <p class="text-sm mt-2">支持搜索志书条目、历史事件、人物传记、档案资料等全部内容</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ======================
+        // 全局数据存储
+        // ======================
+        let currentUser = null;
+        let articleIdCounter = 100;
+        let eventIdCounter = 100;
+        let personIdCounter = 100;
+        let archiveIdCounter = 100;
+
+        // 志书条目初始数据
+        let articles = [
+            { id: 1, title: '村落建置沿革', category: '地理志', author: '陈主编', words: '6,240', status: '已定稿', updateTime: '2026-11-10' },
+            { id: 2, title: '姓氏与家族源流', category: '人口志', author: '李研究员', words: '8,120', status: '初审中', updateTime: '2026-11-12' },
+            { id: 3, title: '传统农业生产', category: '经济志', author: '王编纂', words: '4,560', status: '编纂中', updateTime: '2026-11-14' },
+            { id: 4, title: '传统节庆习俗', category: '民俗志', author: '张编纂', words: '3,200', status: '初审中', updateTime: '2026-11-15' },
+            { id: 5, title: '古民居建筑', category: '地理志', author: '刘技术员', words: '5,800', status: '已发布', updateTime: '2026-11-08' },
+            { id: 6, title: '村办小学发展史', category: '教育志', author: '陈老师', words: '-', status: '待编纂', updateTime: '-' }
+        ];
+
+        // 历史事件初始数据
+        let events = [
+            { id: 1, year: '1398年', era: '明清时期', icon: 'ri-home-smile-line', color: 'primary', title: '村落始建', desc: '明洪武三十一年，王氏先祖自山西洪洞县迁此定居，因村前有桃树千株，得名桃源村。初始住户17户，人口68人，开垦荒地300余亩。' },
+            { id: 2, year: '1688年', era: '明清时期', icon: 'ri-temple-line', color: 'accent', title: '王氏宗祠建成', desc: '康熙二十七年，阖族捐资修建王氏宗祠，占地2.8亩，三进院落，为村里保存最完整的古建筑。同年设立村塾，开始有正式教育记载。' },
+            { id: 3, year: '1937年', era: '抗日战争时期', icon: 'ri-flag-line', color: 'seal', title: '抗日根据地建立', desc: '1937年11月，八路军进村建立抗日根据地，村里先后有42名青年参加八路军，12人为国捐躯。村民积极支援前线，送军粮、做军鞋，为抗战胜利作出重要贡献。' },
+            { id: 4, year: '1982年', era: '改革开放时期', icon: 'ri-plant-line', color: 'green-600', title: '实行家庭联产承包责任制', desc: '1982年秋，全村实行家庭联产承包责任制，土地分到户，极大调动了村民生产积极性。当年粮食亩产突破800斤，比上年增产40%，解决了温饱问题。' },
+            { id: 5, year: '2018年', era: '新时代', icon: 'ri-road-map-line', color: 'steel', title: '入选中国传统村落名录', desc: '2018年12月，桃源村被列入第五批中国传统村落名录，获得国家保护资金支持。同年开始发展乡村旅游，民宿、农家乐产业兴起，村民人均收入突破2万元。' },
+            { id: 6, year: '2026年', era: '新时代', icon: 'ri-book-mark-line', color: 'purple-600', title: '村志村史数字化工程启动', desc: '2026年3月，正式启动村志村史数字化编纂工程，计划用2年时间完成全部286个条目的编纂工作，同步建立数字化档案库，让600年村史代代相传。' }
+        ];
+
+        // 人物初始数据
+        let people = [
+            { id: 1, name: '王德昭', category: '历史名贤', categoryColor: 'badge-info', years: '清乾隆年间进士 · 1724-1795', desc: '乾隆二十五年进士，曾任福建归化知县，为官清廉，捐资修建村塾和石桥，深受百姓爱戴。', avatarColor: 'primary' },
+            { id: 2, name: '王铁蛋', category: '革命先烈', categoryColor: 'badge-danger', years: '八路军排长 · 1918-1942', desc: '1938年参加八路军，作战勇敢，任排长。1942年反扫荡战斗中为掩护战友壮烈牺牲，年仅24岁。', avatarColor: 'seal' },
+            { id: 3, name: '李桂兰', category: '劳动模范', categoryColor: 'badge-success', years: '全国三八红旗手 · 1938-', desc: '曾任村党支部书记，带领村民治山治水、修梯田，1979年被评为全国三八红旗手，是全县著名的劳动模范。', avatarColor: 'green-600' },
+            { id: 4, name: '王木匠', category: '能工巧匠', categoryColor: 'badge-warning', years: '传统木雕传承人 · 1945-', desc: '王氏木雕第三代传人，从事木雕工艺50余年，精通传统建筑木雕技艺，参与修缮多处文物古建，作品多次获奖。', avatarColor: 'accent' },
+            { id: 5, name: '王建国', category: '在外乡贤', categoryColor: 'bg-purple-100 text-purple-700', years: '大学教授 · 1962-', desc: '清华大学建筑学院教授、博士生导师，著名古建筑专家，长期关心家乡建设，为传统村落保护做出重要贡献。', avatarColor: 'purple-600' },
+            { id: 6, name: '陈主编', category: '现任主编', categoryColor: 'bg-orange-100 text-orange-700', years: '村志主编 · 1952-', desc: '退休中学教师，土生土长本村人，熟悉村史民情，现任村志编纂委员会主编，已主持完成12个篇目的编纂工作。', avatarColor: 'orange-600' }
+        ];
+
+        // 档案初始数据
+        let archives = [
+            { id: 1, name: '王氏族谱（民国二十六年重修版）', type: '文献族谱', icon: 'ri-file-pdf-line', iconBg: 'bg-red-100', iconColor: 'text-red-600', info: 'PDF · 128页 · 24.6MB · 2026-10-15上传' },
+            { id: 2, name: '1958年全村社员合影老照片', type: '老照片', icon: 'ri-image-line', iconBg: 'bg-blue-100', iconColor: 'text-blue-600', info: 'JPG · 3240×2160 · 4.2MB · 2026-10-20上传' },
+            { id: 3, name: '抗战老人王大爷口述历史录音', type: '口述录音', icon: 'ri-mp3-line', iconBg: 'bg-green-100', iconColor: 'text-green-600', info: 'MP3 · 时长1小时24分 · 78MB · 2026-11-05上传', isAudio: true },
+            { id: 4, name: '2026年春节祭祖活动纪录片', type: '影像视频', icon: 'ri-video-line', iconBg: 'bg-purple-100', iconColor: 'text-purple-600', info: 'MP4 · 时长45分钟 · 1.2GB · 2026-02-18上传', isVideo: true },
+            { id: 5, name: '桃源村古民居测绘图集', type: '老照片', icon: 'ri-image-line', iconBg: 'bg-blue-100', iconColor: 'text-blue-600', info: 'PDF+JPG · 86页 · 126MB · 2026-11-01上传' },
+            { id: 6, name: '清光绪版桃源县志村卷', type: '文献族谱', icon: 'ri-file-text-line', iconBg: 'bg-orange-100', iconColor: 'text-orange-600', info: 'PDF · 扫描件 · 56页 · 18.2MB · 2026-09-28上传' }
+        ];
+
+        // 用户列表数据
+        const userList = [
+            { username: 'admin', name: '系统管理员', role: 'admin', roleLabel: '管理员', icon: 'ri-shield-user-line', iconColor: 'text-primary' },
+            { username: 'guest', name: '访客用户', role: 'user', roleLabel: '普通用户', icon: 'ri-user-3-line', iconColor: 'text-steel' },
+            { username: 'chenbianzhu', name: '陈主编', role: 'editor', roleLabel: '编辑员', icon: 'ri-user-line', iconColor: 'text-accent' }
+        ];
+
+        // 通知系统数据
+        let notifications = [
+            { id: 1, type: 'success', icon: 'ri-checkbox-circle-line', title: '《民俗志·节庆篇》', content: '完成初审，共3200字', time: '2小时前', read: false },
+            { id: 2, type: 'info', icon: 'ri-folder-add-line', title: '档案入库', content: '新增李氏族谱资料12份，扫描件48页', time: '昨天', read: false },
+            { id: 3, type: 'warning', icon: 'ri-mic-line', title: '采访完成', content: '抗战时期村史口述采访完成，共采访8位老人', time: '3天前', read: false }
+        ];
+
+        // 近期动态数据
+        const activities = [
+            { color: 'primary', title: '《民俗志·节庆篇》完成初审', meta: '张编纂 · 2小时前 · 3200字' },
+            { color: 'accent', title: '新增李氏族谱资料12份', meta: '王档案员 · 昨天 · 扫描件48页' },
+            { color: 'seal', title: '抗战时期村史口述采访完成', meta: '李研究员 · 3天前 · 采访8位老人' },
+            { color: 'green-600', title: '《地理志·山水篇》正式定稿', meta: '陈主编 · 5天前 · 5800字' },
+            { color: 'steel', title: '古建筑照片数字化入库完成', meta: '刘技术员 · 1周前 · 216张照片' }
+        ];
+
+        // 预设账号
+        const accounts = {
+            'admin': { password: '123456', role: 'admin', name: '系统管理员' },
+            'guest': { password: '123456', role: 'user', name: '访客用户' },
+            'chenbianzhu': { password: '123456', role: 'admin', name: '陈主编' }
+        };
+
+        // ======================
+        // 登录权限系统
+        // ======================
+        function doLogin() {
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+            const roleInput = document.querySelector('input[name="role"]:checked');
+            const selectedRole = roleInput ? roleInput.value : 'user';
+
+            if (selectedRole === 'admin') {
+                if (username !== 'admin' && username !== 'chenbianzhu') {
+                    showToast('管理员账号不正确，请使用admin登录', 'danger');
+                    return;
+                }
+                if (password !== '123456') {
+                    showToast('密码错误', 'danger');
+                    return;
+                }
+                currentUser = accounts[username] || { role: 'admin', name: username };
+            } else {
+                currentUser = { role: 'user', name: username || '访客用户' };
+            }
+
+            document.getElementById('login-page').classList.remove('active');
+            document.getElementById('main-app').classList.remove('hidden');
+            
+            applyPermissions();
+            updateUserDisplay();
+            initNavigation();
+            renderAllData();
+            initCharts();
+            renderNotifications();
+            
+            showToast(`欢迎回来，${currentUser.name}！`, 'success');
+        }
+
+        function doLogout() {
+            currentUser = null;
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('login-page').classList.add('active');
+            document.getElementById('login-username').value = 'admin';
+            document.getElementById('login-password').value = '123456';
+            document.querySelector('input[name="role"][value="admin"]').checked = true;
+            closeNotificationPanel();
+            showToast('已安全退出登录', 'info');
+        }
+
+        function applyPermissions() {
+            const isAdmin = currentUser && currentUser.role === 'admin';
+            const adminElements = document.querySelectorAll('.admin-only');
+            
+            adminElements.forEach(el => {
+                el.style.display = isAdmin ? '' : 'none';
+            });
+
+            const inputs = document.querySelectorAll('.form-input');
+            inputs.forEach(input => {
+                if (input.id !== 'login-username' && input.id !== 'login-password') {
+                    input.readOnly = !isAdmin;
+                }
+            });
+
+            const readonlyBanner = document.getElementById('readonly-banner');
+            const permissionHint = document.getElementById('permission-hint');
+            if (!isAdmin) {
+                readonlyBanner.classList.remove('hidden');
+                permissionHint.textContent = '只读模式，不可修改';
+                document.querySelectorAll('.user-only-hint').forEach(el => el.classList.remove('hidden'));
+            } else {
+                readonlyBanner.classList.add('hidden');
+                permissionHint.textContent = '拥有完整操作权限';
+                document.querySelectorAll('.user-only-hint').forEach(el => el.classList.add('hidden'));
+            }
+        }
+
+        function updateUserDisplay() {
+            if (!currentUser) return;
+            
+            const nameDisplay = document.getElementById('user-name-display');
+            const roleDisplay = document.getElementById('user-role-display');
+            const mobileName = document.getElementById('mobile-user-name');
+            const mobileRole = document.getElementById('mobile-user-role');
+            
+            nameDisplay.textContent = currentUser.name;
+            mobileName.textContent = currentUser.name;
+            
+            if (currentUser.role === 'admin' || currentUser.role === 'editor') {
+                roleDisplay.textContent = currentUser.role === 'admin' ? '管理员' : '编辑员';
+                roleDisplay.className = 'role-badge role-admin';
+                mobileRole.textContent = currentUser.role === 'admin' ? '管理员' : '编辑员';
+                mobileRole.className = 'role-badge role-admin';
+            } else {
+                roleDisplay.textContent = '普通用户';
+                roleDisplay.className = 'role-badge role-user';
+                mobileRole.textContent = '普通用户';
+                mobileRole.className = 'role-badge role-user';
+            }
+        }
+
+        function requireAdmin(callback) {
+            if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'editor')) {
+                showToast('抱歉，您没有操作权限，请联系管理员', 'danger');
+                return;
+            }
+            callback && callback();
+        }
+
+        // ======================
+        // Toast提示系统
+        // ======================
+        function showToast(message, type = 'default') {
+            const existing = document.querySelector('.readonly-toast');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = 'readonly-toast';
+            if (type !== 'default') {
+                toast.classList.add(`toast-${type}`);
+            }
+            toast.innerHTML = `<div class="flex items-center gap-2"><i class="ri-${type === 'success' ? 'checkbox-circle' : type === 'danger' ? 'error-warning' : type === 'info' ? 'information' : 'notification'}-line"></i>${message}</div>`;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        // ======================
+        // 通知中心系统
+        // ======================
+        function toggleNotificationPanel() {
+            const panel = document.getElementById('notification-panel');
+            panel.classList.toggle('hidden');
+            if (!panel.classList.contains('hidden')) {
+                renderNotifications();
+            }
+        }
+
+        function closeNotificationPanel() {
+            document.getElementById('notification-panel').classList.add('hidden');
+        }
+
+        function renderNotifications() {
+            const list = document.getElementById('notification-list');
+            const badge = document.getElementById('notification-badge');
+            const unreadCount = notifications.filter(n => !n.read).length;
+            
+            badge.textContent = unreadCount;
+            badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+
+            if (notifications.length === 0) {
+                list.innerHTML = `
+                    <div class="p-8 text-center text-ink/50">
+                        <i class="ri-notification-off-line text-4xl mb-2"></i>
+                        <p class="text-sm">暂无通知消息</p>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = notifications.map(n => `
+                <div class="notification-item ${n.read ? '' : 'unread'} p-4 border-b border-gray-50 cursor-pointer relative" onclick="markAsRead(${n.id})">
+                    ${!n.read ? '<span class="unread-dot"></span>' : ''}
+                    <div class="flex gap-3">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                            n.type === 'success' ? 'bg-green-100 text-green-600' :
+                            n.type === 'danger' ? 'bg-red-100 text-seal' :
+                            n.type === 'warning' ? 'bg-yellow-100 text-yellow-600' :
+                            'bg-blue-100 text-steel'
+                        }">
+                            <i class="${n.icon}"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium">${n.title}</p>
+                            <p class="text-xs text-ink/60 mt-0.5">${n.content}</p>
+                            <p class="text-[11px] text-ink/40 mt-1">${n.time}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addNotification(type, title, content) {
+            const newNotif = {
+                id: Date.now(),
+                type: type,
+                icon: type === 'success' ? 'ri-checkbox-circle-line' :
+                      type === 'danger' ? 'ri-delete-bin-line' :
+                      type === 'warning' ? 'ri-alert-line' :
+                      'ri-information-line',
+                title: title,
+                content: content,
+                time: '刚刚',
+                read: false
+            };
+            notifications.unshift(newNotif);
+            renderNotifications();
+        }
+
+        function markAsRead(id) {
+            const notif = notifications.find(n => n.id === id);
+            if (notif) {
+                notif.read = true;
+                renderNotifications();
+            }
+        }
+
+        function markAllAsRead() {
+            notifications.forEach(n => n.read = true);
+            renderNotifications();
+            renderNotificationPage();
+            showToast('全部通知已标记为已读', 'info');
+        }
+
+        function clearAllNotifications() {
+            requireAdmin(() => {
+                notifications = [];
+                renderNotifications();
+                renderNotificationPage();
+                showToast('已清空全部通知', 'info');
+            });
+        }
+
+        let currentNotifFilter = 'all';
+
+        function filterNotifications(type) {
+            currentNotifFilter = type;
+            document.querySelectorAll('.notif-filter-btn').forEach(btn => {
+                if (btn.dataset.type === type) {
+                    btn.classList.add('bg-primary', 'text-white');
+                    btn.classList.remove('bg-white', 'border', 'border-primary/20', 'text-ink/70', 'hover:bg-primary/5');
+                } else {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('bg-white', 'border', 'border-primary/20', 'text-ink/70', 'hover:bg-primary/5');
+                }
+            });
+            renderNotificationPage();
+        }
+
+        function renderNotificationPage() {
+            const container = document.getElementById('notification-full-list');
+            if (!container) return;
+
+            // 更新统计数字
+            document.getElementById('notif-total').textContent = notifications.length;
+            document.getElementById('notif-unread').textContent = notifications.filter(n => !n.read).length;
+            document.getElementById('notif-success').textContent = notifications.filter(n => n.type === 'success').length;
+            document.getElementById('notif-warning').textContent = notifications.filter(n => n.type === 'warning').length;
+
+            let filtered = notifications;
+            if (currentNotifFilter === 'unread') {
+                filtered = notifications.filter(n => !n.read);
+            } else if (currentNotifFilter !== 'all') {
+                filtered = notifications.filter(n => n.type === currentNotifFilter);
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="p-16 text-center text-ink/50">
+                        <i class="ri-notification-off-line text-5xl mb-3 opacity-30"></i>
+                        <p class="text-lg">暂无${currentNotifFilter === 'unread' ? '未读' : ''}通知消息</p>
+                        <p class="text-sm mt-2 text-ink/40">所有消息都已处理完毕</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(n => `
+                <div class="p-5 flex gap-4 hover:bg-gray-50 cursor-pointer transition ${!n.read ? 'bg-primary/5' : ''}" onclick="markAsRead(${n.id}); renderNotificationPage();">
+                    <div class="w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${
+                        n.type === 'success' ? 'bg-green-100 text-green-600' :
+                        n.type === 'danger' ? 'bg-red-100 text-seal' :
+                        n.type === 'warning' ? 'bg-yellow-100 text-yellow-600' :
+                        'bg-blue-100 text-steel'
+                    }">
+                        <i class="${n.icon} text-xl"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <h4 class="font-medium ${!n.read ? 'text-ink' : 'text-ink/70'}">${n.title}</h4>
+                            ${!n.read ? '<span class="w-2 h-2 rounded-full bg-seal"></span>' : ''}
+                        </div>
+                        <p class="text-sm text-ink/70 mb-2">${n.content}</p>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs text-ink/50"><i class="ri-time-line mr-1"></i>${n.time}</span>
+                            <span class="badge ${
+                                n.type === 'success' ? 'badge-success' :
+                                n.type === 'danger' ? 'badge-danger' :
+                                n.type === 'warning' ? 'badge-warning' :
+                                'badge-info'
+                            }">${
+                                n.type === 'success' ? '完成' :
+                                n.type === 'danger' ? '删除' :
+                                n.type === 'warning' ? '提醒' :
+                                '消息'
+                            }</span>
+                        </div>
+                    </div>
+                    <div class="shrink-0 flex items-start">
+                        <button class="admin-only p-2 text-seal/60 hover:bg-seal/10 rounded" onclick="event.stopPropagation(); deleteNotification(${n.id})" title="删除">
+                            <i class="ri-delete-bin-line"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function deleteNotification(id) {
+            requireAdmin(() => {
+                notifications = notifications.filter(n => n.id !== id);
+                renderNotifications();
+                renderNotificationPage();
+                showToast('通知已删除', 'info');
+            });
+        }
+
+        // 村志搜索功能
+        let currentChronicleSearch = '';
+        let currentChronicleStatusFilter = '';
+
+        function searchChronicle() {
+            currentChronicleSearch = document.getElementById('chronicle-search-input').value.trim().toLowerCase();
+            currentChronicleStatusFilter = document.getElementById('chronicle-status-select').value;
+            renderArticles();
+        }
+
+        function resetChronicleSearch() {
+            document.getElementById('chronicle-search-input').value = '';
+            document.getElementById('chronicle-status-select').value = '';
+            currentChronicleSearch = '';
+            currentChronicleStatusFilter = '';
+            currentChronicleFilter = 'all';
+            document.querySelectorAll('.chronicle-filter-btn').forEach(btn => {
+                if (btn.dataset.category === 'all') {
+                    btn.classList.add('bg-primary', 'text-white');
+                    btn.classList.remove('bg-white', 'border', 'border-primary/20', 'text-ink/70', 'hover:bg-primary/5');
+                } else {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('bg-white', 'border', 'border-primary/20', 'text-ink/70', 'hover:bg-primary/5');
+                }
+            });
+            renderArticles();
+            showToast('筛选条件已重置', 'info');
+        }
+
+        // ======================
+        // 导航系统
+        // ======================
+        const navItems = [
+            { id: 'dashboard', icon: 'ri-dashboard-line', name: '数据概览', adminOnly: false },
+            { id: 'chronicle', icon: 'ri-book-open-line', name: '村志编纂', adminOnly: false },
+            { id: 'history', icon: 'ri-time-line', name: '村史时间轴', adminOnly: false },
+            { id: 'people', icon: 'ri-user-star-line', name: '人物志', adminOnly: false },
+            { id: 'archive', icon: 'ri-folder-image-line', name: '档案管理', adminOnly: false },
+            { id: 'notifications', icon: 'ri-notification-3-line', name: '通知中心', adminOnly: false },
+            { id: 'statistics', icon: 'ri-bar-chart-box-line', name: '统计分析', adminOnly: false },
+            { id: 'settings', icon: 'ri-settings-line', name: '系统设置', adminOnly: false },
+        ];
+
+        function initNavigation() {
+            const desktopNav = document.getElementById('desktop-nav');
+            desktopNav.innerHTML = navItems.map(item => `
+                <button class="nav-item w-full flex items-center gap-3 px-5 py-3 text-left text-ink/70 hover:bg-primary/5 transition" data-page="${item.id}" onclick="switchPage('${item.id}')">
+                    <i class="${item.icon} text-lg w-5"></i>
+                    <span>${item.name}</span>
+                </button>
+            `).join('');
+
+            const mobileNav = document.getElementById('mobile-nav');
+            mobileNav.innerHTML = navItems.slice(0, 5).map(item => `
+                <button class="flex flex-col items-center gap-1 py-2 text-ink/60 nav-item-mobile" data-page="${item.id}" onclick="switchPage('${item.id}')">
+                    <i class="${item.icon} text-xl"></i>
+                    <span class="text-[10px]">${item.name}</span>
+                </button>
+            `).join('');
+
+            switchPage('dashboard');
+        }
+
+        function switchPage(pageId) {
+            document.querySelectorAll('.module-page').forEach(p => p.classList.remove('active'));
+            document.getElementById(`page-${pageId}`).classList.add('active');
+
+            document.querySelectorAll('.nav-item').forEach(item => {
+                if (item.dataset.page === pageId) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+
+            document.querySelectorAll('.nav-item-mobile').forEach(item => {
+                if (item.dataset.page === pageId) {
+                    item.classList.add('text-primary');
+                    item.classList.remove('text-ink/60');
+                } else {
+                    item.classList.remove('text-primary');
+                    item.classList.add('text-ink/60');
+                }
+            });
+
+            closeNotificationPanel();
+
+            setTimeout(() => {
+                Object.values(charts).forEach(chart => chart && chart.resize());
+            }, 100);
+        }
+
+        // ======================
+        // 数据渲染系统
+        // ======================
+        function renderAllData() {
+            renderArticles();
+            renderEvents();
+            renderPeople();
+            renderArchives();
+            renderActivities();
+            renderUserList();
+            updateStats();
+            renderNotificationPage();
+        }
+
+        function renderActivities() {
+            const container = document.getElementById('recent-activities');
+            container.innerHTML = activities.map(a => `
+                <div class="flex gap-3 items-start">
+                    <div class="w-2 h-2 rounded-full bg-${a.color} mt-2 shrink-0"></div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium">${a.title}</p>
+                        <p class="text-xs text-ink/60 mt-1">${a.meta}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        let currentChronicleFilter = 'all';
+        let currentHistoryFilter = 'all';
+        let currentPeopleFilter = 'all';
+
+        function filterChronicle(category) {
+            currentChronicleFilter = category;
+            document.querySelectorAll('.chronicle-filter-btn').forEach(btn => {
+                if (btn.dataset.category === category) {
+                    btn.classList.add('bg-primary', 'text-white');
+                    btn.classList.remove('bg-white', 'text-ink/70', 'border', 'border-primary/20');
+                } else {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('bg-white', 'text-ink/70', 'border', 'border-primary/20');
+                }
+            });
+            renderArticles();
+        }
+
+        function filterHistory(era) {
+            currentHistoryFilter = era;
+            document.querySelectorAll('.history-filter-btn').forEach(btn => {
+                if (btn.dataset.era === era) {
+                    btn.classList.add('bg-primary', 'text-white');
+                    btn.classList.remove('bg-white', 'text-ink/70', 'border', 'border-primary/20');
+                } else {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('bg-white', 'text-ink/70', 'border', 'border-primary/20');
+                }
+            });
+            renderEvents();
+        }
+
+        function filterPeople(category) {
+            currentPeopleFilter = category;
+            document.querySelectorAll('.people-filter-btn').forEach(btn => {
+                if (btn.dataset.category === category) {
+                    btn.classList.add('bg-primary', 'text-white');
+                    btn.classList.remove('bg-white', 'text-ink/70', 'border', 'border-primary/20');
+                } else {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('bg-white', 'text-ink/70', 'border', 'border-primary/20');
+                }
+            });
+            renderPeople();
+        }
+
+        function openDetailModal(type, id) {
+            const modal = document.getElementById('detail-modal');
+            const titleEl = document.getElementById('detail-title');
+            const contentEl = document.getElementById('detail-content');
+            
+            let html = '';
+            if (type === 'article') {
+                const a = articles.find(x => x.id === id);
+                if (!a) return;
+                titleEl.textContent = a.title;
+                const statusBadge = 
+                    a.status === '已定稿' || a.status === '已发布' ? 'badge-success' :
+                    a.status === '初审中' ? 'badge-info' :
+                    a.status === '编纂中' ? 'badge-warning' : 'badge-danger';
+                html = `
+                    <div class="space-y-4">
+                        <div class="flex flex-wrap gap-3">
+                            <span class="badge badge-info">${a.category}</span>
+                            <span class="badge ${statusBadge}">${a.status}</span>
+                            <span class="text-sm text-ink/60"><i class="ri-user-line mr-1"></i>编纂人：${a.author}</span>
+                            <span class="text-sm text-ink/60"><i class="ri-file-text-line mr-1"></i>字数：约${a.words}字</span>
+                            <span class="text-sm text-ink/60"><i class="ri-calendar-line mr-1"></i>更新：${a.updateTime}</span>
+                        </div>
+                        <div class="p-5 bg-paper rounded-lg border border-primary/10">
+                            <h4 class="font-bold font-song text-lg mb-3 text-primary">内容正文</h4>
+                            <p class="text-sm leading-relaxed text-ink/80" style="text-indent: 2em;">
+                                ${a.desc || '桃源村位于青山环抱之中，始建于明洪武年间，至今已有628年历史。村落坐北朝南，依山傍水，整体布局按照传统风水理念营建，保存有明清时期古民居120余栋，王氏宗祠、古戏台、石拱桥等标志性建筑保存完好。村民以王姓为主，世代耕读传家，民风淳朴，保留了完整的传统民俗文化和宗族制度。近年来，随着传统村落保护工作的推进，古村焕发新生，成为远近闻名的历史文化名村和乡村旅游目的地。'}
+                            </p>
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'event') {
+                const e = events.find(x => x.id === id);
+                if (!e) return;
+                titleEl.textContent = e.title;
+                html = `
+                    <div class="space-y-4">
+                        <div class="flex flex-wrap gap-3">
+                            <span class="badge badge-info">${e.year}</span>
+                            <span class="badge badge-warning">${e.era}</span>
+                        </div>
+                        <div class="p-5 bg-paper rounded-lg border border-primary/10">
+                            <h4 class="font-bold font-song text-lg mb-3 text-seal">事件详情</h4>
+                            <p class="text-sm leading-relaxed text-ink/80" style="text-indent: 2em;">
+                                ${e.desc} 这一事件在桃源村发展史上具有重要意义，对后世村落发展产生了深远影响。据族谱和县志记载，当时村民积极参与，共同推动了村落建设与发展，留下了宝贵的历史记忆和精神财富，至今仍为村民所传颂。
+                            </p>
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'person') {
+                const p = people.find(x => x.id === id);
+                if (!p) return;
+                titleEl.textContent = p.name + ' - 人物传记';
+                html = `
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-4">
+                            <div class="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                                <i class="ri-user-line text-3xl text-primary"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h3 class="text-xl font-bold font-song">${p.name}</h3>
+                                    <span class="badge ${p.categoryColor}">${p.category}</span>
+                                </div>
+                                <p class="text-sm text-ink/60">${p.years}</p>
+                            </div>
+                        </div>
+                        <div class="p-5 bg-paper rounded-lg border border-primary/10">
+                            <h4 class="font-bold font-song text-lg mb-3 text-accent">生平事迹</h4>
+                            <p class="text-sm leading-relaxed text-ink/80" style="text-indent: 2em;">
+                                ${p.desc} 一生勤勤恳恳，为桃源村的发展做出了重要贡献，深受村民爱戴和敬仰。其事迹被载入村史，成为后人学习的榜样，体现了桃源村人崇文重教、勤劳善良、爱国爱乡的优良传统。
+                            </p>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            contentEl.innerHTML = html;
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detail-modal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        function renderArticles() {
+            const tbody = document.getElementById('chronicle-table-body');
+            let filtered = articles;
+            
+            // 先按篇目分类筛选
+            if (currentChronicleFilter !== 'all') {
+                filtered = filtered.filter(a => a.category === currentChronicleFilter);
+            }
+            
+            // 再按关键词搜索
+            if (currentChronicleSearch) {
+                filtered = filtered.filter(a => 
+                    a.title.toLowerCase().includes(currentChronicleSearch) ||
+                    a.category.toLowerCase().includes(currentChronicleSearch) ||
+                    a.author.toLowerCase().includes(currentChronicleSearch) ||
+                    (a.desc && a.desc.toLowerCase().includes(currentChronicleSearch))
+                );
+            }
+            
+            // 再按状态筛选
+            if (currentChronicleStatusFilter) {
+                filtered = filtered.filter(a => a.status === currentChronicleStatusFilter);
+            }
+            
+            tbody.innerHTML = filtered.map(a => `
+                <tr class="table-row border-t border-gray-100">
+                    <td class="px-4 py-3">
+                        <div class="font-medium">${highlightKeyword(a.title, currentChronicleSearch)}</div>
+                    </td>
+                    <td class="px-4 py-3 text-sm text-ink/70">${a.category}</td>
+                    <td class="px-4 py-3 text-sm text-ink/70 hidden md:table-cell">${a.author}</td>
+                    <td class="px-4 py-3 text-sm text-ink/70 hidden md:table-cell">${a.words}</td>
+                    <td class="px-4 py-3"><span class="badge ${
+                        a.status === '已定稿' || a.status === '已发布' ? 'badge-success' :
+                        a.status === '初审中' ? 'badge-info' :
+                        a.status === '编纂中' ? 'badge-warning' :
+                        'badge-danger'
+                    }">${a.status}</span></td>
+                    <td class="px-4 py-3 text-sm text-ink/70 hidden md:table-cell">${a.updateTime}</td>
+                    <td class="px-4 py-3">
+                        <div class="flex gap-1">
+                            <button class="p-1.5 hover:bg-gray-100 rounded text-primary" title="查看详情" onclick="openDetailModal('article', ${a.id})"><i class="ri-eye-line"></i></button>
+                            <button class="admin-only p-1.5 hover:bg-gray-100 rounded text-blue-600" title="编辑" onclick="requireAdmin(() => openEditModal('article', ${a.id}))"><i class="ri-edit-line"></i></button>
+                            <button class="admin-only p-1.5 hover:bg-gray-100 rounded text-seal" title="删除" onclick="requireAdmin(() => openDeleteModal('article', ${a.id}, '确定要删除条目「${a.title}」吗？'))"><i class="ri-delete-bin-line"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-10 text-ink/50"><i class="ri-search-line text-3xl mb-2 block"></i>未找到匹配的条目，请尝试其他关键词</td></tr>`;
+            }
+        }
+
+        function highlightKeyword(text, keyword) {
+            if (!keyword) return text;
+            const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            return text.replace(regex, '<span class="bg-yellow-200 px-0.5 rounded">$1</span>');
+        }
+
+        function renderEvents() {
+            const container = document.getElementById('history-timeline');
+            const colorMap = {
+                'primary': 'bg-primary',
+                'accent': 'bg-accent',
+                'seal': 'bg-seal',
+                'green-600': 'bg-green-600',
+                'steel': 'bg-steel',
+                'purple-600': 'bg-purple-600'
+            };
+            const filtered = currentHistoryFilter === 'all' ? events : events.filter(e => e.era === currentHistoryFilter);
+            container.innerHTML = filtered.map(e => `
+                <div class="relative">
+                    <div class="absolute -left-10 w-10 h-10 rounded-full ${colorMap[e.color]} flex items-center justify-center text-white z-10">
+                        <i class="${e.icon}"></i>
+                    </div>
+                    <div class="era-card bg-white rounded-xl p-5 shadow-sm border border-primary/5">
+                        <div class="flex items-start justify-between mb-2">
+                            <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(139,69,19,0.1); color: #8B4513;">${e.year} · ${e.era}</span>
+                            <div class="flex gap-1">
+                                <button class="p-1 text-primary hover:bg-primary/5 rounded" title="查看详情" onclick="openDetailModal('event', ${e.id})"><i class="ri-eye-line"></i></button>
+                                <button class="admin-only p-1 text-blue-600 hover:bg-blue-50 rounded" onclick="requireAdmin(() => openEditModal('event', ${e.id}))"><i class="ri-edit-line"></i></button>
+                                <button class="admin-only p-1 text-seal hover:bg-seal/5 rounded" onclick="requireAdmin(() => openDeleteModal('event', ${e.id}, '确定要删除历史事件「${e.title}」吗？'))"><i class="ri-delete-bin-line"></i></button>
+                            </div>
+                        </div>
+                        <h3 class="text-lg font-bold font-song mb-2">${e.title}</h3>
+                        <p class="text-sm text-ink/70 leading-relaxed">${e.desc}</p>
+                    </div>
+                </div>
+            `).join('');
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="text-center py-16 text-ink/50"><i class="ri-time-line text-4xl mb-3 block opacity-30"></i><p>该历史时期暂无记录事件</p></div>`;
+            }
+        }
+
+        function renderPeople() {
+            const container = document.getElementById('people-grid');
+            const colorMap = {
+                'primary': 'bg-primary/10 text-primary',
+                'seal': 'bg-seal/10 text-seal',
+                'green-600': 'bg-green-100 text-green-600',
+                'accent': 'bg-accent/10 text-accent',
+                'purple-600': 'bg-purple-100 text-purple-600',
+                'orange-600': 'bg-orange-100 text-orange-600'
+            };
+            const filtered = currentPeopleFilter === 'all' ? people : people.filter(p => p.category === currentPeopleFilter);
+            container.innerHTML = filtered.map(p => `
+                <div class="bg-white rounded-xl shadow-sm border border-primary/5 p-5 hover:shadow-md transition">
+                    <div class="flex items-start gap-4">
+                        <div class="w-16 h-16 rounded-full ${colorMap[p.avatarColor]} flex items-center justify-center shrink-0">
+                            <i class="ri-user-line text-2xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <h3 class="font-bold font-song">${p.name}</h3>
+                                <span class="badge ${p.categoryColor}">${p.category}</span>
+                            </div>
+                            <p class="text-xs text-ink/60 mb-2">${p.years}</p>
+                            <p class="text-sm text-ink/70 line-clamp-2">${p.desc}</p>
+                            <div class="flex gap-2 mt-3">
+                                <button class="text-xs px-3 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition" onclick="openDetailModal('person', ${p.id})">查看详情</button>
+                                <button class="admin-only text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-20 transition" onclick="requireAdmin(() => openEditModal('person', ${p.id}))">编辑</button>
+                                <button class="admin-only text-xs px-3 py-1 rounded-full bg-red-100 text-seal hover:bg-red-200 transition" onclick="requireAdmin(() => openDeleteModal('person', ${p.id}, '确定要删除人物「${p.name}」吗？'))">删除</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-16 text-ink/50"><i class="ri-user-line text-4xl mb-3 block opacity-30"></i><p>该分类下暂无人物记录</p></div>`;
+            }
+        }
+
+        let currentArchiveFilter = 'all';
+
+        function filterArchive(type) {
+            currentArchiveFilter = type;
+            document.querySelectorAll('.archive-filter-btn').forEach(btn => {
+                if (btn.dataset.type === type) {
+                    btn.classList.add('bg-primary', 'text-white');
+                    btn.classList.remove('hover:bg-gray-100', 'text-ink/70');
+                } else {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('hover:bg-gray-100', 'text-ink/70');
+                }
+            });
+            renderArchives();
+        }
+
+        function renderArchives() {
+            const container = document.getElementById('archive-list');
+            const filtered = currentArchiveFilter === 'all' ? archives : archives.filter(a => a.type === currentArchiveFilter);
+            container.innerHTML = filtered.map(a => `
+                <div class="p-4 flex items-center gap-4 hover:bg-gray-50">
+                    <div class="w-10 h-10 rounded ${a.iconBg} flex items-center justify-center shrink-0">
+                        <i class="${a.icon} ${a.iconColor}"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-medium truncate">${a.name}</p>
+                        <p class="text-xs text-ink/60 mt-1">${a.info}</p>
+                    </div>
+                    <div class="flex gap-1">
+                        ${a.isAudio || a.isVideo ? '<button class="p-2 text-green-600 hover:bg-green-50 rounded" onclick="showToast(\'开始播放\', \'info\')"><i class="ri-play-line"></i></button>' : ''}
+                        <button class="p-2 text-primary hover:bg-primary/5 rounded" onclick="showToast('开始下载文件', 'info')"><i class="ri-download-line"></i></button>
+                        <button class="p-2 text-primary hover:bg-primary/5 rounded" onclick="showToast('预览文件', 'info')"><i class="ri-eye-line"></i></button>
+                        <button class="admin-only p-2 text-seal hover:bg-seal/5 rounded" onclick="requireAdmin(() => openDeleteModal('archive', ${a.id}, '确定要删除档案「${a.name}」吗？'))"><i class="ri-delete-bin-line"></i></button>
+                    </div>
+                </div>
+            `).join('');
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="p-10 text-center text-ink/50"><i class="ri-folder-line text-3xl mb-2 block opacity-30"></i>暂无该类型档案</div>`;
+            }
+        }
+
+        function renderUserList() {
+            const container = document.getElementById('user-list');
+            container.innerHTML = userList.map(u => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                            <i class="${u.icon} ${u.iconColor}"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium">${u.username}</p>
+                            <p class="text-xs text-ink/60">${u.name}</p>
+                        </div>
+                    </div>
+                    <span class="role-badge ${u.role === 'user' ? 'role-user' : 'role-admin'}">${u.roleLabel}</span>
+                </div>
+            `).join('');
+        }
+
+        function updateStats() {
+            document.getElementById('stat-articles').textContent = articles.length + 280;
+            document.getElementById('stat-events').textContent = events.length + 146;
+            document.getElementById('stat-people').textContent = people.length + 88;
+            document.getElementById('stat-archives').textContent = archives.length + 1276;
+        }
+
+        // ======================
+        // 弹窗表单系统
+        // ======================
+        function openAddModal(type) {
+            document.getElementById('form-type').value = type;
+            document.getElementById('form-edit-id').value = '';
+            
+            const titles = {
+                'article': '新建志书条目',
+                'event': '添加历史事件',
+                'person': '新增人物传记',
+                'archive': '上传档案资料'
+            };
+            document.getElementById('modal-title').textContent = titles[type];
+            
+            renderFormFields(type, null);
+            document.getElementById('form-modal').classList.remove('hidden');
+        }
+
+        function openEditModal(type, id) {
+            document.getElementById('form-type').value = type;
+            document.getElementById('form-edit-id').value = id;
+            
+            const titles = {
+                'article': '编辑志书条目',
+                'event': '编辑历史事件',
+                'person': '编辑人物信息',
+                'archive': '编辑档案信息'
+            };
+            document.getElementById('modal-title').textContent = titles[type];
+            
+            let data = null;
+            if (type === 'article') data = articles.find(a => a.id === id);
+            else if (type === 'event') data = events.find(e => e.id === id);
+            else if (type === 'person') data = people.find(p => p.id === id);
+            else if (type === 'archive') data = archives.find(a => a.id === id);
+            
+            renderFormFields(type, data);
+            document.getElementById('form-modal').classList.remove('hidden');
+        }
+
+        function renderFormFields(type, data) {
+            const container = document.getElementById('form-fields');
+            let html = '';
+            
+            if (type === 'article') {
+                html = `
+                    <div>
+                        <label class="form-label">条目名称 *</label>
+                        <input type="text" id="field-title" class="form-input" placeholder="请输入条目名称" value="${data ? data.title : ''}" required>
+                    </div>
+                    <div>
+                        <label class="form-label">所属篇目 *</label>
+                        <select id="field-category" class="form-input" required>
+                            <option value="">请选择篇目</option>
+                            <option value="地理志" ${data && data.category === '地理志' ? 'selected' : ''}>地理志</option>
+                            <option value="人口志" ${data && data.category === '人口志' ? 'selected' : ''}>人口志</option>
+                            <option value="经济志" ${data && data.category === '经济志' ? 'selected' : ''}>经济志</option>
+                            <option value="民俗志" ${data && data.category === '民俗志' ? 'selected' : ''}>民俗志</option>
+                            <option value="教育志" ${data && data.category === '教育志' ? 'selected' : ''}>教育志</option>
+                            <option value="人物志" ${data && data.category === '人物志' ? 'selected' : ''}>人物志</option>
+                            <option value="艺文志" ${data && data.category === '艺文志' ? 'selected' : ''}>艺文志</option>
+                            <option value="大事记" ${data && data.category === '大事记' ? 'selected' : ''}>大事记</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="form-label">编纂人</label>
+                            <input type="text" id="field-author" class="form-input" placeholder="编纂人姓名" value="${data ? data.author : currentUser.name}">
+                        </div>
+                        <div>
+                            <label class="form-label">状态</label>
+                            <select id="field-status" class="form-input">
+                                <option value="待编纂" ${data && data.status === '待编纂' ? 'selected' : ''}>待编纂</option>
+                                <option value="编纂中" ${data && data.status === '编纂中' ? 'selected' : ''}>编纂中</option>
+                                <option value="初审中" ${data && data.status === '初审中' ? 'selected' : ''}>初审中</option>
+                                <option value="已定稿" ${data && data.status === '已定稿' ? 'selected' : ''}>已定稿</option>
+                                <option value="已发布" ${data && data.status === '已发布' ? 'selected' : ''}>已发布</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">内容摘要</label>
+                        <textarea id="field-content" class="form-input" rows="4" placeholder="请输入条目内容摘要...">${data ? (data.desc || '') : ''}</textarea>
+                    </div>
+                `;
+            } else if (type === 'event') {
+                html = `
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="form-label">年份/时间 *</label>
+                            <input type="text" id="field-year" class="form-input" placeholder="如：1937年" value="${data ? data.year : ''}" required>
+                        </div>
+                        <div>
+                            <label class="form-label">历史时期</label>
+                            <select id="field-era" class="form-input">
+                                <option value="明清时期" ${data && data.era === '明清时期' ? 'selected' : ''}>明清时期</option>
+                                <option value="民国时期" ${data && data.era === '民国时期' ? 'selected' : ''}>民国时期</option>
+                                <option value="抗日战争时期" ${data && data.era === '抗日战争时期' ? 'selected' : ''}>抗日战争时期</option>
+                                <option value="建国初期" ${data && data.era === '建国初期' ? 'selected' : ''}>建国初期</option>
+                                <option value="改革开放时期" ${data && data.era === '改革开放时期' ? 'selected' : ''}>改革开放时期</option>
+                                <option value="新时代" ${data && data.era === '新时代' ? 'selected' : ''}>新时代</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">事件标题 *</label>
+                        <input type="text" id="field-title" class="form-input" placeholder="请输入事件名称" value="${data ? data.title : ''}" required>
+                    </div>
+                    <div>
+                        <label class="form-label">事件详细描述</label>
+                        <textarea id="field-desc" class="form-input" rows="4" placeholder="请详细描述事件的经过、影响和意义...">${data ? data.desc : ''}</textarea>
+                    </div>
+                `;
+            } else if (type === 'person') {
+                html = `
+                    <div>
+                        <label class="form-label">姓名 *</label>
+                        <input type="text" id="field-name" class="form-input" placeholder="请输入人物姓名" value="${data ? data.name : ''}" required>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="form-label">人物类别</label>
+                            <select id="field-category" class="form-input">
+                                <option value="历史名贤" ${data && data.category === '历史名贤' ? 'selected' : ''}>历史名贤</option>
+                                <option value="革命先烈" ${data && data.category === '革命先烈' ? 'selected' : ''}>革命先烈</option>
+                                <option value="劳动模范" ${data && data.category === '劳动模范' ? 'selected' : ''}>劳动模范</option>
+                                <option value="能工巧匠" ${data && data.category === '能工巧匠' ? 'selected' : ''}>能工巧匠</option>
+                                <option value="在外乡贤" ${data && data.category === '在外乡贤' ? 'selected' : ''}>在外乡贤</option>
+                                <option value="现任干部" ${data && data.category === '现任干部' ? 'selected' : ''}>现任干部</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">生卒年份/身份</label>
+                            <input type="text" id="field-years" class="form-input" placeholder="如：1920-1998 · 村支书" value="${data ? data.years : ''}">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">生平事迹简介</label>
+                        <textarea id="field-desc" class="form-input" rows="4" placeholder="请输入人物主要事迹和贡献...">${data ? data.desc : ''}</textarea>
+                    </div>
+                `;
+            } else if (type === 'archive') {
+                html = `
+                    <div>
+                        <label class="form-label">档案名称 *</label>
+                        <input type="text" id="field-name" class="form-input" placeholder="请输入档案名称" value="${data ? data.name : ''}" required>
+                    </div>
+                    <div>
+                        <label class="form-label">档案类型</label>
+                        <select id="field-archive-type" class="form-input">
+                            <option value="文献族谱">文献族谱</option>
+                            <option value="老照片">老照片</option>
+                            <option value="口述录音">口述录音</option>
+                            <option value="影像视频">影像视频</option>
+                            <option value="古籍方志">古籍方志</option>
+                            <option value="实物档案">实物档案</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">文件上传</label>
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary transition cursor-pointer">
+                            <i class="ri-upload-cloud-line text-3xl text-primary/50 mb-2"></i>
+                            <p class="text-sm text-ink/60">点击或拖拽文件到此处上传</p>
+                            <p class="text-xs text-ink/40 mt-1">支持 PDF、Word、图片、音频、视频格式</p>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">备注说明</label>
+                        <textarea id="field-remark" class="form-input" rows="2" placeholder="档案相关备注信息...">${data ? data.info : ''}</textarea>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function closeModal() {
+            document.getElementById('form-modal').classList.add('hidden');
+            document.getElementById('data-form').reset();
+        }
+
+        function submitForm(e) {
+            e.preventDefault();
+            const type = document.getElementById('form-type').value;
+            const editId = document.getElementById('form-edit-id').value;
+            const today = new Date().toISOString().split('T')[0];
+            const isEdit = !!editId;
+            
+            if (type === 'article') {
+                const title = document.getElementById('field-title').value;
+                const category = document.getElementById('field-category').value;
+                const author = document.getElementById('field-author').value;
+                const status = document.getElementById('field-status').value;
+                
+                if (isEdit) {
+                    const idx = articles.findIndex(a => a.id === parseInt(editId));
+                    if (idx !== -1) {
+                        articles[idx] = { ...articles[idx], title, category, author, status, updateTime: today };
+                    }
+                    showToast('条目修改成功！', 'success');
+                    addNotification('success', '条目更新', `志书条目「${title}」已更新`);
+                } else {
+                    articles.unshift({
+                        id: ++articleIdCounter,
+                        title, category, author, status,
+                        words: '0',
+                        updateTime: today
+                    });
+                    showToast('新条目创建成功！', 'success');
+                    addNotification('success', '新增条目', `志书条目「${title}」已创建`);
+                    activities.unshift({ color: 'primary', title: `新建条目：${title}`, meta: `${currentUser.name} · 刚刚 · ${category}` });
+                }
+            } else if (type === 'event') {
+                const year = document.getElementById('field-year').value;
+                const era = document.getElementById('field-era').value;
+                const title = document.getElementById('field-title').value;
+                const desc = document.getElementById('field-desc').value;
+                
+                if (isEdit) {
+                    const idx = events.findIndex(e => e.id === parseInt(editId));
+                    if (idx !== -1) {
+                        events[idx] = { ...events[idx], year, era, title, desc };
+                    }
+                    showToast('历史事件修改成功！', 'success');
+                    addNotification('success', '事件更新', `历史事件「${title}」已更新`);
+                } else {
+                    events.unshift({
+                        id: ++eventIdCounter,
+                        year, era, title, desc,
+                        icon: 'ri-calendar-event-line',
+                        color: 'accent'
+                    });
+                    showToast('历史事件添加成功！', 'success');
+                    addNotification('success', '新增事件', `历史事件「${title}」已添加`);
+                    activities.unshift({ color: 'seal', title: `新增历史事件：${title}`, meta: `${currentUser.name} · 刚刚 · ${year}` });
+                }
+            } else if (type === 'person') {
+                const name = document.getElementById('field-name').value;
+                const category = document.getElementById('field-category').value;
+                const years = document.getElementById('field-years').value;
+                const desc = document.getElementById('field-desc').value;
+                
+                const categoryColorMap = {
+                    '历史名贤': 'badge-info',
+                    '革命先烈': 'badge-danger',
+                    '劳动模范': 'badge-success',
+                    '能工巧匠': 'badge-warning',
+                    '在外乡贤': 'bg-purple-100 text-purple-700',
+                    '现任干部': 'bg-orange-100 text-orange-700'
+                };
+                const avatarColorMap = ['primary', 'seal', 'green-600', 'accent', 'purple-600', 'orange-600'];
+                
+                if (isEdit) {
+                    const idx = people.findIndex(p => p.id === parseInt(editId));
+                    if (idx !== -1) {
+                        people[idx] = { ...people[idx], name, category, years, desc, categoryColor: categoryColorMap[category] };
+                    }
+                    showToast('人物信息修改成功！', 'success');
+                    addNotification('success', '人物更新', `人物「${name}」信息已更新`);
+                } else {
+                    people.unshift({
+                        id: ++personIdCounter,
+                        name, category, years, desc,
+                        categoryColor: categoryColorMap[category] || 'badge-info',
+                        avatarColor: avatarColorMap[Math.floor(Math.random() * avatarColorMap.length)]
+                    });
+                    showToast('人物添加成功！', 'success');
+                    addNotification('success', '新增人物', `人物「${name}」已录入人物志`);
+                    activities.unshift({ color: 'accent', title: `新增人物传记：${name}`, meta: `${currentUser.name} · 刚刚 · ${category}` });
+                }
+            } else if (type === 'archive') {
+                const name = document.getElementById('field-name').value;
+                const archiveType = document.getElementById('field-archive-type').value;
+                
+                const iconMap = {
+                    '文献族谱': { icon: 'ri-file-text-line', bg: 'bg-primary/10', color: 'text-primary', isAudio: false, isVideo: false },
+                    '老照片': { icon: 'ri-image-line', bg: 'bg-blue-100', color: 'text-blue-600', isAudio: false, isVideo: false },
+                    '口述录音': { icon: 'ri-mp3-line', bg: 'bg-green-100', color: 'text-green-600', isAudio: true, isVideo: false },
+                    '影像视频': { icon: 'ri-video-line', bg: 'bg-purple-100', color: 'text-purple-600', isAudio: false, isVideo: true },
+                    '古籍方志': { icon: 'ri-book-2-line', bg: 'bg-green-100', color: 'text-green-600', isAudio: false, isVideo: false },
+                    '实物档案': { icon: 'ri-archive-line', bg: 'bg-orange-100', color: 'text-orange-600', isAudio: false, isVideo: false }
+                };
+                const ic = iconMap[archiveType] || iconMap['文献族谱'];
+                
+                if (isEdit) {
+                    const idx = archives.findIndex(a => a.id === parseInt(editId));
+                    if (idx !== -1) {
+                        archives[idx] = { ...archives[idx], name, type: archiveType, ...ic, info: '刚刚更新' };
+                    }
+                    showToast('档案信息修改成功！', 'success');
+                    addNotification('success', '档案更新', `档案「${name}」信息已更新`);
+                } else {
+                    archives.unshift({
+                        id: ++archiveIdCounter,
+                        name, type: archiveType, ...ic,
+                        info: `${archiveType} · 刚刚上传`
+                    });
+                    showToast('档案上传成功！', 'success');
+                    addNotification('success', '档案上传', `档案「${name}」已上传入库`);
+                    activities.unshift({ color: 'steel', title: `新档案上传：${name}`, meta: `${currentUser.name} · 刚刚 · ${archiveType}` });
+                }
+            }
+            
+            closeModal();
+            renderAllData();
+            applyPermissions();
+        }
+
+        // ======================
+        // 删除确认系统
+        // ======================
+        function openDeleteModal(type, id, text) {
+            document.getElementById('delete-type').value = type;
+            document.getElementById('delete-id').value = id;
+            document.getElementById('delete-confirm-text').textContent = text + ' 此操作不可恢复，请谨慎操作。';
+            document.getElementById('delete-modal').classList.remove('hidden');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').classList.add('hidden');
+        }
+
+        function confirmDelete() {
+            const type = document.getElementById('delete-type').value;
+            const id = parseInt(document.getElementById('delete-id').value);
+            let itemName = '';
+            
+            if (type === 'article') {
+                const idx = articles.findIndex(a => a.id === id);
+                if (idx !== -1) {
+                    itemName = articles[idx].title;
+                    articles.splice(idx, 1);
+                }
+            } else if (type === 'event') {
+                const idx = events.findIndex(e => e.id === id);
+                if (idx !== -1) {
+                    itemName = events[idx].title;
+                    events.splice(idx, 1);
+                }
+            } else if (type === 'person') {
+                const idx = people.findIndex(p => p.id === id);
+                if (idx !== -1) {
+                    itemName = people[idx].name;
+                    people.splice(idx, 1);
+                }
+            } else if (type === 'archive') {
+                const idx = archives.findIndex(a => a.id === id);
+                if (idx !== -1) {
+                    itemName = archives[idx].name;
+                    archives.splice(idx, 1);
+                }
+            }
+            
+            closeDeleteModal();
+            renderAllData();
+            applyPermissions();
+            
+            const typeNames = { article: '志书条目', event: '历史事件', person: '人物传记', archive: '档案资料' };
+            showToast(`${typeNames[type]}已成功删除`, 'success');
+            addNotification('danger', '删除记录', `${typeNames[type]}「${itemName}」已被删除`);
+        }
+
+        // ======================
+        // 图表初始化
+        // ======================
+        const charts = {};
+
+        function initCharts() {
+            charts.progress = echarts.init(document.getElementById('progress-chart'));
+            charts.progress.setOption({
+                tooltip: { trigger: 'item' },
+                legend: { bottom: '0', left: 'center' },
+                series: [{
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    avoidLabelOverlap: false,
+                    itemStyle: { borderRadius: 8, borderColor: '#fff', borderWidth: 2 },
+                    label: { show: false },
+                    emphasis: { label: { show: true, fontSize: 16, fontWeight: 'bold' } },
+                    labelLine: { show: false },
+                    data: [
+                        { value: 156, name: '已定稿', itemStyle: { color: '#228B22' } },
+                        { value: 68, name: '编纂中', itemStyle: { color: '#DAA520' } },
+                        { value: 42, name: '初审中', itemStyle: { color: '#4682B4' } },
+                        { value: 20, name: '待编纂', itemStyle: { color: '#B22222' } }
+                    ]
+                }]
+            });
+
+            charts.category = echarts.init(document.getElementById('chart-category'));
+            charts.category.setOption({
+                tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                xAxis: { type: 'value', max: 100 },
+                yAxis: { 
+                    type: 'category', 
+                    data: ['艺文志', '大事记', '教育志', '民俗志', '经济志', '人物志', '人口志', '地理志']
+                },
+                series: [{
+                    type: 'bar',
+                    data: [65, 90, 45, 78, 72, 55, 88, 95],
+                    itemStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                            { offset: 0, color: '#8B4513' },
+                            { offset: 1, color: '#CD853F' }
+                        ]),
+                        borderRadius: [0, 4, 4, 0]
+                    }
+                }]
+            });
+
+            charts.contributor = echarts.init(document.getElementById('chart-contributor'));
+            charts.contributor.setOption({
+                tooltip: { trigger: 'item' },
+                legend: { bottom: '0', left: 'center' },
+                series: [{
+                    type: 'pie',
+                    radius: '60%',
+                    data: [
+                        { value: 12, name: '陈主编', itemStyle: { color: '#8B4513' } },
+                        { value: 8, name: '李研究员', itemStyle: { color: '#D2691E' } },
+                        { value: 6, name: '王编纂', itemStyle: { color: '#CD853F' } },
+                        { value: 5, name: '张编纂', itemStyle: { color: '#B22222' } },
+                        { value: 4, name: '其他人员', itemStyle: { color: '#4682B4' } }
+                    ],
+                    label: { fontSize: 12 },
+                    emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.2)' } }
+                }]
+            });
+
+            charts.trend = echarts.init(document.getElementById('chart-trend'));
+            charts.trend.setOption({
+                tooltip: { trigger: 'axis' },
+                grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    data: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月']
+                },
+                yAxis: { type: 'value', name: '千字' },
+                series: [{
+                    data: [12, 18, 25, 32, 28, 45, 52, 48, 62, 75, 88],
+                    type: 'line',
+                    smooth: true,
+                    lineStyle: { color: '#228B22', width: 3 },
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rgba(34, 139, 34, 0.3)' },
+                            { offset: 1, color: 'rgba(34, 139, 34, 0.05)' }
+                        ])
+                    },
+                    itemStyle: { color: '#228B22' }
+                }]
+            });
+
+            charts.archive = echarts.init(document.getElementById('chart-archive'));
+            charts.archive.setOption({
+                tooltip: { trigger: 'item' },
+                legend: { bottom: '0', left: 'center' },
+                series: [{
+                    type: 'pie',
+                    radius: ['30%', '60%'],
+                    data: [
+                        { value: 286, name: '文献族谱', itemStyle: { color: '#8B4513' } },
+                        { value: 642, name: '老照片', itemStyle: { color: '#B22222' } },
+                        { value: 48, name: '口述录音', itemStyle: { color: '#CD853F' } },
+                        { value: 36, name: '影像视频', itemStyle: { color: '#9333EA' } },
+                        { value: 128, name: '古籍方志', itemStyle: { color: '#16A34A' } },
+                        { value: 140, name: '实物档案', itemStyle: { color: '#EA580C' } }
+                    ]
+                }]
+            });
+
+            window.addEventListener('resize', () => {
+                Object.values(charts).forEach(chart => chart && chart.resize());
+            });
+        }
+
+        // ======================
+        // 事件监听
+        // ======================
+        document.getElementById('login-password').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') doLogin();
+        });
+        document.getElementById('login-username').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') doLogin();
+        });
+
+        // 点击通知外部关闭通知面板
+        document.addEventListener('click', (e) => {
+            const notifBtn = document.getElementById('notification-btn');
+            const notifPanel = document.getElementById('notification-panel');
+            if (!notifBtn.contains(e.target) && !notifPanel.contains(e.target)) {
+                closeNotificationPanel();
+            }
+            
+            // 点击弹窗外部关闭弹窗
+            const formModal = document.getElementById('form-modal');
+            const deleteModal = document.getElementById('delete-modal');
+            const galleryModal = document.getElementById('gallery-modal');
+            const lightboxModal = document.getElementById('lightbox-modal');
+            const searchModal = document.getElementById('search-modal');
+            const detailModal = document.getElementById('detail-modal');
+            if (e.target === formModal) closeModal();
+            if (e.target === deleteModal) closeDeleteModal();
+            if (e.target === galleryModal) closeGallery();
+            if (e.target === lightboxModal) closeLightbox();
+            if (e.target === searchModal) closeSearchModal();
+            if (e.target === detailModal) closeDetailModal();
+        });
+
+        // ======================
+        // 图片画廊浏览系统
+        // ======================
+        const galleryImages = [
+            { id: 1, url: 'http://pic.rmb.bdstatic.com/bjh/news/19e5e967888a12367a3af00c473569c5.jpeg', title: '桃源村全景航拍', desc: '2026年春拍摄，全村全貌一览无余', category: 'all', year: '2026' },
+            { id: 2, url: 'http://n.sinaimg.cn/spider20240801/383/w2048h1535/20240801/90c5-146994c044e5232961d0f89702b54a71.jpg', title: '古村落全景风貌', desc: '依山傍水，保存完好的明清古村落建筑群', category: 'building', year: '2024' },
+            { id: 3, url: 'http://pic.rmb.bdstatic.com/bjh/news/47fb0d1bb3360f69e05a658a7cf974b3.jpeg', title: '春日古村风貌', desc: '春季桃花盛开时节的村落美景', category: 'building', year: '2025' },
+            { id: 4, url: 'http://se-feed-bucket.bj.bcebos.com/map_aigc_ancient_village/243a8a7541a7dee154a1de816aa05622.jpg', title: '王氏宗祠正门', desc: '康熙二十七年建成，三进院落古祠堂，为村里最完整古建筑', category: 'building', year: '清代' },
+            { id: 5, url: 'http://miaobi-lite.bj.bcebos.com/miaobi/5mao/b%275rGd5Z%2BO5peF5ri45pmv54K55pyJ5ZOq5LqbXzE3MzIwNzAzNzQuMzAzNjM1MQ%3D%3D%27/0.png', title: '传统民居院落', desc: '典型北方四合院式古民居，保留明清建筑风格', category: 'building', year: '明清' },
+            { id: 6, url: 'http://miaobi-lite.bj.bcebos.com/miaobi/5mao/b%275Yac5p2R5bCP5Z6L56Wg5aCCXzE3MzUwNTcwNTUuMzczMzMxOA%3D%3D%27/0.png', title: '古戏台建筑', desc: '清代古戏台，逢年过节唱戏酬神之所', category: 'building', year: '清代' },
+            { id: 7, url: 'http://pic.rmb.bdstatic.com/bjh/news/19e5e967888a12367a3af00c473569c5.jpeg', title: '1958年全村社员合影', desc: '人民公社时期全体社员在打谷场合影，珍贵历史影像', category: 'old', year: '1958' },
+            { id: 8, url: 'http://n.sinaimg.cn/spider20240801/383/w2048h1535/20240801/90c5-146994c044e5232961d0f89702b54a71.jpg', title: '八十年代村办小学毕业照', desc: '1985年村办小学第一届毕业生与老师合影', category: 'people', year: '1985' },
+            { id: 9, url: 'http://pic.rmb.bdstatic.com/bjh/news/47fb0d1bb3360f69e05a658a7cf974b3.jpeg', title: '抗战老兵合影', desc: '1995年抗战胜利50周年，村里健在的抗战老兵合影', category: 'people', year: '1995' },
+            { id: 10, url: 'http://se-feed-bucket.bj.bcebos.com/map_aigc_ancient_village/243a8a7541a7dee154a1de816aa05622.jpg', title: '春节祭祖大典', desc: '每年正月初一王氏宗祠祭祖活动，传承600余年', category: 'activity', year: '2026' },
+            { id: 11, url: 'http://miaobi-lite.bj.bcebos.com/miaobi/5mao/b%275rGd5Z%2BO5peF5ri45pmv54K55pyJ5ZOq5LqbXzE3MzIwNzAzNzQuMzAzNjM1MQ%3D%3D%27/0.png', title: '传统庙会活动', desc: '每年三月三古庙会，舞龙舞狮热闹非凡', category: 'activity', year: '2025' },
+            { id: 12, url: 'http://miaobi-lite.bj.bcebos.com/miaobi/5mao/b%275Yac5p2R5bCP5Z6L56Wg5aCCXzE3MzUwNTcwNTUuMzczMzMxOA%3D%3D%27/0.png', title: '木雕技艺传承', desc: '非遗传承人王木匠现场演示传统木雕技艺', category: 'people', year: '2026' }
+        ];
+        let currentGalleryFilter = 'all';
+        let currentLightboxIndex = 0;
+        let filteredImages = [...galleryImages];
+
+        function openImageGallery() {
+            renderGallery('all');
+            document.getElementById('gallery-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeGallery() {
+            document.getElementById('gallery-modal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        function renderGallery(filter) {
+            currentGalleryFilter = filter;
+            filteredImages = filter === 'all' ? [...galleryImages] : galleryImages.filter(img => img.category === filter);
+            
+            document.querySelectorAll('.gallery-filter').forEach(btn => {
+                if (btn.dataset.filter === filter) {
+                    btn.classList.add('bg-white/20');
+                } else {
+                    btn.classList.remove('bg-white/20');
+                }
+            });
+            
+            document.getElementById('gallery-count').textContent = `共 ${filteredImages.length} 张珍贵历史照片`;
+            
+            const grid = document.getElementById('gallery-grid');
+            grid.innerHTML = filteredImages.map((img, idx) => `
+                <div class="gallery-thumb relative rounded-xl overflow-hidden group" onclick="openLightbox(${idx})">
+                    <img src="${img.url}" alt="${img.title}" class="w-full h-48 md:h-56 object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition flex flex-col justify-end p-3">
+                        <h4 class="text-white font-bold text-sm">${img.title}</h4>
+                        <p class="text-white/80 text-xs mt-0.5">${img.year} · ${img.desc}</p>
+                    </div>
+                    <div class="absolute top-2 right-2 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                        <i class="ri-zoom-in-line text-white"></i>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterGallery(filter) {
+            renderGallery(filter);
+        }
+
+        function openLightbox(index) {
+            currentLightboxIndex = index;
+            updateLightboxImage();
+            document.getElementById('lightbox-modal').classList.remove('hidden');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox-modal').classList.add('hidden');
+        }
+
+        function updateLightboxImage() {
+            const img = filteredImages[currentLightboxIndex];
+            document.getElementById('lightbox-img').src = img.url;
+            document.getElementById('lightbox-title').textContent = img.title;
+            document.getElementById('lightbox-desc').textContent = img.desc + ' · ' + img.year;
+            document.getElementById('lightbox-index').textContent = `${currentLightboxIndex + 1} / ${filteredImages.length}`;
+        }
+
+        function prevImage() {
+            currentLightboxIndex = (currentLightboxIndex - 1 + filteredImages.length) % filteredImages.length;
+            updateLightboxImage();
+        }
+
+        function nextImage() {
+            currentLightboxIndex = (currentLightboxIndex + 1) % filteredImages.length;
+            updateLightboxImage();
+        }
+
+        // 灯箱键盘导航
+        document.addEventListener('keydown', (e) => {
+            const lightbox = document.getElementById('lightbox-modal');
+            const searchModalEl = document.getElementById('search-modal');
+            if (lightbox.classList.contains('hidden') && searchModalEl.classList.contains('hidden')) return;
+            
+            if (!lightbox.classList.contains('hidden')) {
+                if (e.key === 'ArrowLeft') prevImage();
+                if (e.key === 'ArrowRight') nextImage();
+                if (e.key === 'Escape') closeLightbox();
+            }
+            if (!searchModalEl.classList.contains('hidden')) {
+                if (e.key === 'Escape') closeSearchModal();
+            }
+        });
+
+        // ======================
+        // 全文检索系统
+        // ======================
+        function openSearchModal() {
+            document.getElementById('search-modal').classList.remove('hidden');
+            document.getElementById('search-input').value = '';
+            document.getElementById('search-input').focus();
+            document.getElementById('search-results').innerHTML = `
+                <div class="p-10 text-center text-ink/50">
+                    <i class="ri-search-line text-5xl mb-3 opacity-30"></i>
+                    <p class="text-lg">输入关键词开始搜索</p>
+                    <p class="text-sm mt-2">支持搜索志书条目、历史事件、人物传记、档案资料等全部内容</p>
+                </div>
+            `;
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSearchModal() {
+            document.getElementById('search-modal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        function quickSearch(keyword) {
+            document.getElementById('search-input').value = keyword;
+            performSearch();
+        }
+
+        function highlightText(text, keyword) {
+            if (!keyword) return text;
+            const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            return text.replace(regex, '<span class="search-highlight">$1</span>');
+        }
+
+        function performSearch() {
+            const keyword = document.getElementById('search-input').value.trim();
+            const resultsContainer = document.getElementById('search-results');
+            
+            if (!keyword) {
+                resultsContainer.innerHTML = `
+                    <div class="p-10 text-center text-ink/50">
+                        <i class="ri-search-line text-5xl mb-3 opacity-30"></i>
+                        <p class="text-lg">输入关键词开始搜索</p>
+                        <p class="text-sm mt-2">支持搜索志书条目、历史事件、人物传记、档案资料等全部内容</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const results = [];
+            const lowerKeyword = keyword.toLowerCase();
+
+            // 搜索志书条目
+            articles.forEach(a => {
+                if (a.title.toLowerCase().includes(lowerKeyword) || a.category.toLowerCase().includes(lowerKeyword) || (a.author && a.author.toLowerCase().includes(lowerKeyword))) {
+                    results.push({
+                        type: '志书条目',
+                        typeIcon: 'ri-book-open-line',
+                        typeColor: 'bg-primary/10 text-primary',
+                        title: a.title,
+                        desc: `${a.category} · ${a.author} · ${a.status}`,
+                        meta: a.updateTime,
+                        page: 'chronicle'
+                    });
+                }
+            });
+
+            // 搜索历史事件
+            events.forEach(e => {
+                if (e.title.toLowerCase().includes(lowerKeyword) || e.era.toLowerCase().includes(lowerKeyword) || (e.desc && e.desc.toLowerCase().includes(lowerKeyword))) {
+                    results.push({
+                        type: '历史事件',
+                        typeIcon: 'ri-time-line',
+                        typeColor: 'bg-seal/10 text-seal',
+                        title: e.title,
+                        desc: `${e.year} · ${e.era} · ${e.desc.substring(0, 60)}...`,
+                        meta: '村史时间轴',
+                        page: 'history'
+                    });
+                }
+            });
+
+            // 搜索人物
+            people.forEach(p => {
+                if (p.name.toLowerCase().includes(lowerKeyword) || p.category.toLowerCase().includes(lowerKeyword) || (p.desc && p.desc.toLowerCase().includes(lowerKeyword)) || (p.years && p.years.toLowerCase().includes(lowerKeyword))) {
+                    results.push({
+                        type: '人物传记',
+                        typeIcon: 'ri-user-star-line',
+                        typeColor: 'bg-accent/10 text-accent',
+                        title: p.name,
+                        desc: `${p.category} · ${p.years} · ${p.desc.substring(0, 60)}...`,
+                        meta: '人物志',
+                        page: 'people'
+                    });
+                }
+            });
+
+            // 搜索档案
+            archives.forEach(a => {
+                if (a.name.toLowerCase().includes(lowerKeyword) || (a.info && a.info.toLowerCase().includes(lowerKeyword))) {
+                    results.push({
+                        type: '档案资料',
+                        typeIcon: 'ri-folder-image-line',
+                        typeColor: 'bg-blue-100 text-blue-600',
+                        title: a.name,
+                        desc: a.info,
+                        meta: '档案管理',
+                        page: 'archive'
+                    });
+                }
+            });
+
+            if (results.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="p-10 text-center text-ink/50">
+                        <i class="ri-search-eye-line text-5xl mb-3 opacity-30"></i>
+                        <p class="text-lg">未找到与"${keyword}"相关的内容</p>
+                        <p class="text-sm mt-2">请尝试其他关键词，或检查拼写是否正确</p>
+                    </div>
+                `;
+                return;
+            }
+
+            resultsContainer.innerHTML = `
+                <div class="p-4 border-b border-gray-100 bg-gray-50">
+                    <p class="text-sm text-ink/70">找到 <span class="font-bold text-primary">${results.length}</span> 条与"<span class="font-bold">${keyword}</span>"相关的结果</p>
+                </div>
+                <div class="divide-y divide-gray-50">
+                    ${results.map(r => `
+                        <div class="search-result-item p-4 cursor-pointer transition" onclick="goToSearchResult('${r.page}')">
+                            <div class="flex items-start gap-3">
+                                <div class="w-10 h-10 rounded-lg ${r.typeColor} flex items-center justify-center shrink-0">
+                                    <i class="${r.typeIcon}"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="text-xs px-2 py-0.5 rounded-full ${r.typeColor}">${r.type}</span>
+                                        <span class="text-xs text-ink/50">${r.meta}</span>
+                                    </div>
+                                    <h4 class="font-medium text-base">${highlightText(r.title, keyword)}</h4>
+                                    <p class="text-sm text-ink/70 mt-1 line-clamp-2">${highlightText(r.desc, keyword)}</p>
+                                </div>
+                                <i class="ri-arrow-right-s-line text-ink/30 text-xl mt-1"></i>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function goToSearchResult(pageId) {
+            closeSearchModal();
+            switchPage(pageId);
+            showToast('已跳转到对应页面', 'info');
+        }
+    </script>
+</body>
+</html>
